@@ -2,13 +2,11 @@
 import 'package:flutter/material.dart';
 import '../controllers/match_controller.dart';
 import '../models/goal.dart';
-import '../widgets/score_button.dart';
 import '../widgets/timer_display.dart';
-import '../widgets/player_picker.dart'; // 🔹 nieuw
+import '../widgets/team_players_grid.dart'; // 🔹 nieuw: onze grid
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -33,14 +31,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  Future<void> _pickAndAddGoal(Team team) async {
-    await showTeamPlayerPicker(
-      context: context,
-      team: team,
-      onPick: (number) => _controller.addGoal(team, number),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -52,12 +42,15 @@ class _HomePageState extends State<HomePage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 700;
+          final isWide = constraints.maxWidth > 900; // iets ruimer voor twee kolommen
           final scores = _ScoreBoard(
             homeScore: _controller.homeScore,
             awayScore: _controller.awayScore,
-            onHomeGoal: () => _pickAndAddGoal(Team.home), // 🔹 aangepast
-            onAwayGoal: () => _pickAndAddGoal(Team.away), // 🔹 aangepast
+            onHomeGoal: (n) => _controller.addGoal(Team.home, n),
+            onAwayGoal: (n) => _controller.addGoal(Team.away, n),
+            // Optioneel: geef counts door als je die knoppen wilt laten tellen
+            homeCounts: _countsByPlayer(Team.home),
+            awayCounts: _countsByPlayer(Team.away),
           );
 
           final timeline = _GoalTimeline(goals: _controller.goals);
@@ -143,19 +136,31 @@ class _HomePageState extends State<HomePage> {
     final s = (seconds % 60).toString().padLeft(2, '0');
     return '$m:$s';
   }
+
+  Map<int, int> _countsByPlayer(Team team) {
+    final map = <int, int>{};
+    for (final g in _controller.goals.where((g) => g.team == team)) {
+      map[g.playerNumber] = (map[g.playerNumber] ?? 0) + 1;
+    }
+    return map;
+  }
 }
 
 class _ScoreBoard extends StatelessWidget {
   final int homeScore;
   final int awayScore;
-  final VoidCallback onHomeGoal;
-  final VoidCallback onAwayGoal;
+  final void Function(int) onHomeGoal; // 🔹 krijgt het spelersnummer
+  final void Function(int) onAwayGoal; // 🔹 krijgt het spelersnummer
+  final Map<int, int>? homeCounts;     // 🔹 optioneel: teller per speler
+  final Map<int, int>? awayCounts;
 
   const _ScoreBoard({
     required this.homeScore,
     required this.awayScore,
     required this.onHomeGoal,
     required this.onAwayGoal,
+    this.homeCounts,
+    this.awayCounts,
   });
 
   @override
@@ -179,6 +184,7 @@ class _ScoreBoard extends StatelessWidget {
                     score: homeScore,
                     color: Colors.blue.shade600,
                     onGoal: onHomeGoal,
+                    counts: homeCounts,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -188,6 +194,7 @@ class _ScoreBoard extends StatelessWidget {
                     score: awayScore,
                     color: Colors.red.shade600,
                     onGoal: onAwayGoal,
+                    counts: awayCounts,
                   ),
                 ),
               ],
@@ -203,13 +210,15 @@ class _TeamScore extends StatelessWidget {
   final String title;
   final int score;
   final Color color;
-  final VoidCallback onGoal;
+  final void Function(int) onGoal;
+  final Map<int, int>? counts;
 
   const _TeamScore({
     required this.title,
     required this.score,
     required this.color,
     required this.onGoal,
+    this.counts,
   });
 
   @override
@@ -236,12 +245,16 @@ class _TeamScore extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
           ),
-          const SizedBox(height: 8),
-          // 🔹 Dit opent nu de spelerkeuze modal
-          ScoreButton(
-            label: 'Doelpunt',
-            color: color,
-            onPressed: onGoal,
+          const SizedBox(height: 12),
+          // 🔹 Hier komt de grid met 26 spelerknoppen
+          TeamPlayersGrid(
+            team: title == 'Thuis' ? Team.home : Team.away,
+            playerCount: 26,
+            columns: 8,
+            visibleRows: 2, // toont 16 knoppen; scroll voor rest
+            showGoalCount: counts != null,
+            goalCountsByPlayer: counts,
+            onPick: onGoal, // geeft het nummer door
           ),
         ],
       ),
@@ -251,7 +264,6 @@ class _TeamScore extends StatelessWidget {
 
 class _GoalTimeline extends StatelessWidget {
   final List<Goal> goals;
-
   const _GoalTimeline({required this.goals});
 
   @override
@@ -297,7 +309,7 @@ class _GoalTimeline extends StatelessWidget {
                     isHome ? Icons.home : Icons.flight_takeoff,
                     color: isHome ? Colors.blue : Colors.red,
                   ),
-                  title: Text('${g.teamLabel} ${g.playerLabel}'), // 🔹 speler erbij
+                  title: Text('${isHome ? 'Thuis' : 'Uit'} #${g.playerNumber}'),
                   trailing: Text(g.formattedTime),
                 );
               },

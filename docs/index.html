@@ -2,15 +2,23 @@
 <html>
 <head>
   <!--
-    Als je de app onder een subpad serveert (GitHub Pages), moet de base href
-    beginnen én eindigen met een "/". Voor jouw repo:
-    https://Tr3BB3.github.io/mijn_webapp/
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
   -->
   <base href="/mijn_webapp/">
 
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  <meta name="description" content="Flutter webapp zonder service worker cache (altijd up-to-date).">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -25,25 +33,6 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <!-- Laad de Flutter runtime -->
-  <script src="flutter.js" defer></script>
-
-  <script>
-    // Wacht tot flutter.js geladen is en start de app ZONDER service worker.
-    // Dit voorkomt caching-issues op GitHub Pages.
-    window.addEventListener('load', function () {
-      // In sommige builds staat _flutter onder window.
-      const loader = (window._flutter && window._flutter.loader) || _flutter.loader;
-
-      loader.loadEntrypoint({
-        // 🔴 Belangrijk: géén serviceWorker-config meegeven.
-        // Dus NIET: serviceWorker: { serviceWorkerVersion: '...' }
-      }).then(function (engineInitializer) {
-        return engineInitializer.initializeEngine();
-      }).then(function (appRunner) {
-        return appRunner.runApp();
-      });
-    });
-  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
