@@ -4,6 +4,7 @@ import '../controllers/match_controller.dart';
 import '../models/goal.dart';
 import '../widgets/score_button.dart';
 import '../widgets/timer_display.dart';
+import '../widgets/player_picker.dart'; // 🔹 nieuw
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -32,6 +33,14 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  Future<void> _pickAndAddGoal(Team team) async {
+    await showTeamPlayerPicker(
+      context: context,
+      team: team,
+      onPick: (number) => _controller.addGoal(team, number),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -47,8 +56,8 @@ class _HomePageState extends State<HomePage> {
           final scores = _ScoreBoard(
             homeScore: _controller.homeScore,
             awayScore: _controller.awayScore,
-            onHomeGoal: () => _controller.addGoal(Team.home),
-            onAwayGoal: () => _controller.addGoal(Team.away),
+            onHomeGoal: () => _pickAndAddGoal(Team.home), // 🔹 aangepast
+            onAwayGoal: () => _pickAndAddGoal(Team.away), // 🔹 aangepast
           );
 
           final timeline = _GoalTimeline(goals: _controller.goals);
@@ -228,6 +237,7 @@ class _TeamScore extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 8),
+          // 🔹 Dit opent nu de spelerkeuze modal
           ScoreButton(
             label: 'Doelpunt',
             color: color,
@@ -287,7 +297,7 @@ class _GoalTimeline extends StatelessWidget {
                     isHome ? Icons.home : Icons.flight_takeoff,
                     color: isHome ? Colors.blue : Colors.red,
                   ),
-                  title: Text(isHome ? 'Thuis' : 'Uit'),
+                  title: Text('${g.teamLabel} ${g.playerLabel}'), // 🔹 speler erbij
                   trailing: Text(g.formattedTime),
                 );
               },

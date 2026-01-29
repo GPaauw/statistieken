@@ -47,8 +47,13 @@ class MatchController {
     onTick?.call();
   }
 
-  void addGoal(Team team) {
-    goals.add(Goal(secondStamp: elapsedSeconds, team: team));
+  /// 🔹 Nieuw: doelpunt toevoegen incl. spelersnummer (1..8)
+  void addGoal(Team team, int playerNumber) {
+    goals.add(Goal(
+      secondStamp: elapsedSeconds,
+      team: team,
+      playerNumber: playerNumber,
+    ));
     if (team == Team.home) {
       homeScore++;
     } else {
