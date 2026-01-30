@@ -1,91 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
 
-  <!-- Belangrijk: jouw projectpad op GitHub Pages -->
-  /mijn_webapp/
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="/mijn_webapp/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="mijn_webapp">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>mijn_webapp</title>
-  <meta name="description" content="Flutter webapp">
-
-  <!-- PWA / thema (pas aan naar wens) -->
-  <meta name="theme-color" content="#ffffff">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="mijn_webapp">
-
-  <!-- Icons & manifest (relatieve paden, komen uit build/web/) -->
-  favicon.png
-  icons/Icon-192.png
-  icons/Icon-512.png
-  manifest.json
-
-  <!-- Zorg dat deze bestanden na build in docs/ staan:
-       - favicon.png
-       - icons/Icon-192.png
-       - icons/Icon-512.png
-       - manifest.json
-  -->
-  <style>
-    /* Klein reset/loader */
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: #ffffff;
-    }
-    .center {
-      display:flex; align-items:center; justify-content:center; height:100%;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:#555;
-    }
-  </style>
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
-  <noscript>
-    <div class="center">
-      Deze app heeft JavaScript nodig om te werken.
-    </div>
-  </noscript>
-
-  <!-- Flutter runtime -->
-  flutter.js</script>
-
-  <script>
-    // Start Flutter ZONDER service worker (voorkomt hardnekkige caching-problemen)
-    window.addEventListener('load', function () {
-      // _flutter wordt door flutter.js op window gezet
-      var loader = (window._flutter && window._flutter.loader) || _flutter.loader;
-
-      loader.loadEntrypoint({
-        // GEEN serviceWorker property meegeven → niet registreren
-        // Als je later SW wilt gebruiken, voeg toe:
-        // serviceWorker: { serviceWorkerVersion: '...' }
-      }).then(function (engineInitializer) {
-        return engineInitializer.initializeEngine();
-      }).then(function (appRunner) {
-        return appRunner.runApp();
-      });
-    });
-  </script>
-
-  <!-- Optioneel: eenvoudige tekst tijdens init als JS nog busy is -->
-  <div class="center" id="loading-text">Laden…</div>
-  <script>
-    // Verwijder loader zodra Flutter start
-    (function() {
-      var obs = new MutationObserver(function() {
-        var canvas = document.querySelector('flt-glass-pane, canvas');
-        if (canvas) {
-          var n = document.getElementById('loading-text');
-          if (n) n.remove();
-          obs.disconnect();
-        }
-      });
-      obs.observe(document.body, { childList: true, subtree: true });
-    })();
-  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
