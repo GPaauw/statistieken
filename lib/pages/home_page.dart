@@ -4,10 +4,11 @@ import '../controllers/match_controller.dart';
 import '../models/goal.dart';
 import '../widgets/timer_display.dart';
 import '../widgets/team_players_columns.dart';
-import '../widgets/goal_type_picker.dart'; // 👈 nieuw
+import '../widgets/goal_type_picker.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
   @override
   State<HomePage> createState() => _HomePageState();
 }
@@ -32,7 +33,7 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  /// 🔹 Eerst speler kiezen (via knop in kolommen), dan type kiezen in popup
+  /// Eerst speler kiezen → daarna popup met type doelpunt
   Future<void> _pickTypeAndAdd(Team team, int playerNumber) async {
     final type = await showGoalTypePicker(context);
     if (type == null) return; // geannuleerd
@@ -41,7 +42,18 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final scores = _ScoreBoard(
+      homeScore: _controller.homeScore,
+      awayScore: _controller.awayScore,
+      onHomePick: (n) => _pickTypeAndAdd(Team.home, n),
+      onAwayPick: (n) => _pickTypeAndAdd(Team.away, n),
+      homeCounts: _countsByPlayer(Team.home),
+      awayCounts: _countsByPlayer(Team.away),
+      homePlayers: _controller.homePlayers,
+      awayPlayers: _controller.awayPlayers,
+    );
+
+    final timeline = _GoalTimeline(goals: _controller.goals);
 
     return Scaffold(
       appBar: AppBar(
@@ -51,16 +63,6 @@ class _HomePageState extends State<HomePage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 900;
-          final scores = _ScoreBoard(
-            homeScore: _controller.homeScore,
-            awayScore: _controller.awayScore,
-            onHomePick: (n) => _pickTypeAndAdd(Team.home, n), // 👈 aangepast
-            onAwayPick: (n) => _pickTypeAndAdd(Team.away, n), // 👈 aangepast
-            homeCounts: _countsByPlayer(Team.home),
-            awayCounts: _countsByPlayer(Team.away),
-          );
-
-          final timeline = _GoalTimeline(goals: _controller.goals);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -101,7 +103,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 16),
+
                 isWide
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,14 +127,14 @@ class _HomePageState extends State<HomePage> {
           );
         },
       ),
+
       bottomNavigationBar: SafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Text(
-            'Tijd: ${_format(_controller.elapsedSeconds)} '
-            ' | Doelpunten: ${_controller.goals.length}',
-            style: theme.textTheme.bodyMedium,
+            'Tijd: ${_format(_controller.elapsedSeconds)}  |  '
+            'Doelpunten: ${_controller.goals.length}',
             textAlign: TextAlign.center,
           ),
         ),
@@ -153,21 +157,30 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
+// ===================== SCOREBOARD ========================
+
 class _ScoreBoard extends StatelessWidget {
   final int homeScore;
   final int awayScore;
-  final void Function(int) onHomePick; // 👈 spelernummer doorgeven
-  final void Function(int) onAwayPick; // 👈 spelernummer doorgeven
+
+  final void Function(int) onHomePick;
+  final void Function(int) onAwayPick;
+
   final Map<int, int>? homeCounts;
   final Map<int, int>? awayCounts;
+
+  final dynamic homePlayers;
+  final dynamic awayPlayers;
 
   const _ScoreBoard({
     required this.homeScore,
     required this.awayScore,
     required this.onHomePick,
     required this.onAwayPick,
-    this.homeCounts,
-    this.awayCounts,
+    required this.homeCounts,
+    required this.awayCounts,
+    required this.homePlayers,
+    required this.awayPlayers,
   });
 
   @override
@@ -183,6 +196,7 @@ class _ScoreBoard extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
+
             Row(
               children: [
                 Expanded(
@@ -192,6 +206,7 @@ class _ScoreBoard extends StatelessWidget {
                     color: Colors.blue.shade600,
                     onPick: onHomePick,
                     counts: homeCounts,
+                    players: homePlayers,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -202,6 +217,7 @@ class _ScoreBoard extends StatelessWidget {
                     color: Colors.red.shade600,
                     onPick: onAwayPick,
                     counts: awayCounts,
+                    players: awayPlayers,
                   ),
                 ),
               ],
@@ -213,18 +229,24 @@ class _ScoreBoard extends StatelessWidget {
   }
 }
 
+// ===================== TEAM SCORE COLUMN ========================
+
 class _TeamScore extends StatelessWidget {
   final String title;
   final int score;
   final Color color;
-  final void Function(int) onPick; // 👈 spelerknop-klik
+
+  final void Function(int) onPick;
   final Map<int, int>? counts;
+
+  final dynamic players;
 
   const _TeamScore({
     required this.title,
     required this.score,
     required this.color,
     required this.onPick,
+    required this.players,
     this.counts,
   });
 
@@ -248,7 +270,9 @@ class _TeamScore extends StatelessWidget {
               color: color,
             ),
           ),
+
           const SizedBox(height: 8),
+
           Text(
             '$score',
             style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -256,13 +280,14 @@ class _TeamScore extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
           ),
+
           const SizedBox(height: 12),
 
-          // 👉 Twee kolommen: 1–8 links, 9–16 rechts
           TeamPlayersColumns(
             team: team,
-            onPick: onPick,                // speler #n aanklik → bubbelt omhoog
-            showGoalCount: counts != null, // optioneel: (n) teller op knop
+            players: players,
+            onPick: onPick,
+            showGoalCount: counts != null,
             goalCountsByPlayer: counts,
           ),
         ],
@@ -271,8 +296,11 @@ class _TeamScore extends StatelessWidget {
   }
 }
 
+// ===================== TIMELINE ========================
+
 class _GoalTimeline extends StatelessWidget {
   final List<Goal> goals;
+
   const _GoalTimeline({required this.goals});
 
   @override
@@ -285,7 +313,7 @@ class _GoalTimeline extends StatelessWidget {
           child: Center(
             child: Text(
               'Nog geen doelpunten',
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
         ),
@@ -296,34 +324,24 @@ class _GoalTimeline extends StatelessWidget {
       elevation: 2,
       child: Padding(
         padding: const EdgeInsets.all(8),
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text(
-                'Doelpunten',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: goals.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final g = goals[index];
+            final isHome = g.team == Team.home;
+
+            return ListTile(
+              leading: Icon(
+                isHome ? Icons.home : Icons.flight_takeoff,
+                color: isHome ? Colors.blue : Colors.red,
               ),
-            ),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: goals.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final g = goals[index];
-                final isHome = g.team == Team.home;
-                return ListTile(
-                  leading: Icon(
-                    isHome ? Icons.home : Icons.flight_takeoff,
-                    color: isHome ? Colors.blue : Colors.red,
-                  ),
-                  title: Text('${g.teamLabel} #${g.playerNumber} — ${g.type.label}'),
-                  trailing: Text(g.formattedTime),
-                );
-              },
-            ),
-          ],
+              title: Text('${g.teamLabel} ${g.playerLabel} — ${g.type.label}'),
+              trailing: Text(g.formattedTime),
+            );
+          },
         ),
       ),
     );
