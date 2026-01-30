@@ -24,40 +24,33 @@ class MatchController {
   void start() {
     if (isRunning) return;
     isRunning = true;
-
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       elapsedSeconds++;
       onTick?.call();
     });
-
-    onTick?.call();
   }
 
   void stop() {
     isRunning = false;
     _timer?.cancel();
-    _timer = null;
-    onTick?.call();
   }
 
   void reset() {
     stop();
-    elapsedSeconds = 0;
     homeScore = 0;
     awayScore = 0;
+    elapsedSeconds = 0;
     goals.clear();
     onTick?.call();
   }
 
-  void addGoal(Team team, int playerNumber, GoalType type) {
-    goals.add(
-      Goal(
-        secondStamp: elapsedSeconds,
-        team: team,
-        playerNumber: playerNumber,
-        type: type,
-      ),
-    );
+  void addGoal(Team team, int number, GoalType type) {
+    goals.add(Goal(
+      secondStamp: elapsedSeconds,
+      team: team,
+      playerNumber: number,
+      type: type,
+    ));
 
     if (team == Team.home) {
       homeScore++;
@@ -68,18 +61,17 @@ class MatchController {
     onTick?.call();
   }
 
-  void updateHomePlayers(TeamPlayers updated) {
-    homePlayers = updated;
+  void updateHomePlayers(TeamPlayers players) {
+    homePlayers = players;
     onTick?.call();
   }
 
-  void updateAwayPlayers(TeamPlayers updated) {
-    awayPlayers = updated;
+  void updateAwayPlayers(TeamPlayers players) {
+    awayPlayers = players;
     onTick?.call();
   }
 
   void dispose() {
     _timer?.cancel();
-    _timer = null;
   }
 }

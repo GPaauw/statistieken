@@ -7,7 +7,7 @@ import '../models/players.dart';
 class TeamPlayersColumns extends StatelessWidget {
   final Team team;
   final TeamPlayers players;
-  final void Function(int number) onPick;
+  final void Function(int) onPick;
   final bool showGoalCount;
   final Map<int, int>? goalCountsByPlayer;
 
@@ -22,20 +22,18 @@ class TeamPlayersColumns extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isHome = team == Team.home;
-    final color = isHome ? Colors.blue.shade600 : Colors.red.shade600;
+    final color = team == Team.home ? Colors.blue : Colors.red;
 
-    Widget btn(int n) {
+    Widget button(int n) {
       final name = players.getName(n);
-      final count = showGoalCount
-          ? " (${(goalCountsByPlayer ?? {})[n] ?? 0})"
-          : "";
+      final count =
+          showGoalCount ? " (${goalCountsByPlayer?[n] ?? 0})" : "";
 
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: color.withOpacity(.12),
+            backgroundColor: color.withOpacity(.15),
             foregroundColor: color,
           ),
           onPressed: () => onPick(n),
@@ -49,13 +47,9 @@ class TeamPlayersColumns extends StatelessWidget {
 
     return Row(
       children: [
-        Expanded(
-          child: Column(children: left.map(btn).toList()),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(children: right.map(btn).toList()),
-        ),
+        Expanded(child: Column(children: left.map(button).toList())),
+        const SizedBox(width: 16),
+        Expanded(child: Column(children: right.map(button).toList())),
       ],
     );
   }

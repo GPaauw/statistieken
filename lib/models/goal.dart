@@ -13,23 +13,16 @@ enum GoalType {
   penalty,
 }
 
-extension GoalTypeX on GoalType {
+extension GoalTypeLabel on GoalType {
   String get label {
     switch (this) {
-      case GoalType.smallChance2m:
-        return "Klein kansje 2m";
-      case GoalType.midRange5m:
-        return "Mid range 5m";
-      case GoalType.longRange7m:
-        return "Afstander 7m";
-      case GoalType.turnaround:
-        return "Omdraaibal";
-      case GoalType.throughBall:
-        return "Doorloopbal";
-      case GoalType.freeThrow:
-        return "Vrije bal";
-      case GoalType.penalty:
-        return "Strafworp";
+      case GoalType.smallChance2m: return "Klein kansje 2m";
+      case GoalType.midRange5m:    return "Mid range 5m";
+      case GoalType.longRange7m:   return "Afstander 7m";
+      case GoalType.turnaround:    return "Omdraaibal";
+      case GoalType.throughBall:   return "Doorloopbal";
+      case GoalType.freeThrow:     return "Vrije bal";
+      case GoalType.penalty:       return "Strafworp";
     }
   }
 }
@@ -55,5 +48,4 @@ class Goal {
   }
 
   String get teamLabel => team == Team.home ? "Thuis" : "Uit";
-  String get playerLabel => "#$playerNumber";
 }
