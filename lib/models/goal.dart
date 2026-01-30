@@ -1,20 +1,47 @@
 // lib/models/goal.dart
 import 'package:flutter/foundation.dart';
 
-/// Welke ploeg scoorde.
+/// Team
 enum Team { home, away }
 
-/// Een doelpunt met tijdstip (in seconden sinds start), het team en spelersnummer.
+/// Type doelpunt
+enum GoalType {
+  smallChance2m, // Klein kansje 2m
+  midRange5m,    // Mid range 5m
+  longRange7m,   // Afstander 7m
+  turnaround,    // Omdraaibal
+  throughBall,   // Doorloopbal
+  freeThrow,     // Vrije bal
+  penalty,       // Strafworp
+}
+
+extension GoalTypeX on GoalType {
+  String get label {
+    switch (this) {
+      case GoalType.smallChance2m: return 'Klein kansje 2m';
+      case GoalType.midRange5m:    return 'Mid range 5m';
+      case GoalType.longRange7m:   return 'Afstander 7m';
+      case GoalType.turnaround:    return 'Omdraaibal';
+      case GoalType.throughBall:   return 'Doorloopbal';
+      case GoalType.freeThrow:     return 'Vrije bal';
+      case GoalType.penalty:       return 'Strafworp';
+    }
+  }
+}
+
+/// Een doelpunt met tijdstip, team, speler en type.
 @immutable
 class Goal {
   final int secondStamp;
   final Team team;
-  final int playerNumber; // 🔹 nieuw
+  final int playerNumber;
+  final GoalType type; // 🔹 nieuw
 
   const Goal({
     required this.secondStamp,
     required this.team,
-    required this.playerNumber, // 🔹 nieuw
+    required this.playerNumber,
+    required this.type,
   });
 
   String get formattedTime {
@@ -24,6 +51,5 @@ class Goal {
   }
 
   String get teamLabel => team == Team.home ? 'Thuis' : 'Uit';
-
   String get playerLabel => '#$playerNumber';
 }

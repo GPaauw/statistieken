@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../controllers/match_controller.dart';
 import '../models/goal.dart';
 import '../widgets/timer_display.dart';
-import '../widgets/team_players_columns.dart'; // 👈 NIEUW: twee kolommen 1–8 links, 9–16 rechts
+import '../widgets/team_players_columns.dart';
+import '../widgets/goal_type_picker.dart'; // 👈 nieuw
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -31,6 +32,13 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  /// 🔹 Eerst speler kiezen (via knop in kolommen), dan type kiezen in popup
+  Future<void> _pickTypeAndAdd(Team team, int playerNumber) async {
+    final type = await showGoalTypePicker(context);
+    if (type == null) return; // geannuleerd
+    _controller.addGoal(team, playerNumber, type);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -42,13 +50,12 @@ class _HomePageState extends State<HomePage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 900; // ruimer voor twee kolommen
+          final isWide = constraints.maxWidth > 900;
           final scores = _ScoreBoard(
             homeScore: _controller.homeScore,
             awayScore: _controller.awayScore,
-            onHomeGoal: (n) => _controller.addGoal(Team.home, n),
-            onAwayGoal: (n) => _controller.addGoal(Team.away, n),
-            // optioneel: teller per speler aanhouden
+            onHomePick: (n) => _pickTypeAndAdd(Team.home, n), // 👈 aangepast
+            onAwayPick: (n) => _pickTypeAndAdd(Team.away, n), // 👈 aangepast
             homeCounts: _countsByPlayer(Team.home),
             awayCounts: _countsByPlayer(Team.away),
           );
@@ -149,16 +156,16 @@ class _HomePageState extends State<HomePage> {
 class _ScoreBoard extends StatelessWidget {
   final int homeScore;
   final int awayScore;
-  final void Function(int) onHomeGoal; // krijgt het spelersnummer
-  final void Function(int) onAwayGoal; // krijgt het spelersnummer
-  final Map<int, int>? homeCounts;     // optioneel: teller per speler
+  final void Function(int) onHomePick; // 👈 spelernummer doorgeven
+  final void Function(int) onAwayPick; // 👈 spelernummer doorgeven
+  final Map<int, int>? homeCounts;
   final Map<int, int>? awayCounts;
 
   const _ScoreBoard({
     required this.homeScore,
     required this.awayScore,
-    required this.onHomeGoal,
-    required this.onAwayGoal,
+    required this.onHomePick,
+    required this.onAwayPick,
     this.homeCounts,
     this.awayCounts,
   });
@@ -183,7 +190,7 @@ class _ScoreBoard extends StatelessWidget {
                     title: 'Thuis',
                     score: homeScore,
                     color: Colors.blue.shade600,
-                    onGoal: onHomeGoal,
+                    onPick: onHomePick,
                     counts: homeCounts,
                   ),
                 ),
@@ -193,7 +200,7 @@ class _ScoreBoard extends StatelessWidget {
                     title: 'Uit',
                     score: awayScore,
                     color: Colors.red.shade600,
-                    onGoal: onAwayGoal,
+                    onPick: onAwayPick,
                     counts: awayCounts,
                   ),
                 ),
@@ -210,14 +217,14 @@ class _TeamScore extends StatelessWidget {
   final String title;
   final int score;
   final Color color;
-  final void Function(int) onGoal;
+  final void Function(int) onPick; // 👈 spelerknop-klik
   final Map<int, int>? counts;
 
   const _TeamScore({
     required this.title,
     required this.score,
     required this.color,
-    required this.onGoal,
+    required this.onPick,
     this.counts,
   });
 
@@ -251,12 +258,11 @@ class _TeamScore extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // 👉 Twee kolommen met "Doelpunt #n":
-          // links: #1..#8, rechts: #9..#16
+          // 👉 Twee kolommen: 1–8 links, 9–16 rechts
           TeamPlayersColumns(
             team: team,
-            onPick: onGoal,                // geeft direct het nummer door
-            showGoalCount: counts != null, // toont optionele (n) teller
+            onPick: onPick,                // speler #n aanklik → bubbelt omhoog
+            showGoalCount: counts != null, // optioneel: (n) teller op knop
             goalCountsByPlayer: counts,
           ),
         ],
@@ -312,7 +318,7 @@ class _GoalTimeline extends StatelessWidget {
                     isHome ? Icons.home : Icons.flight_takeoff,
                     color: isHome ? Colors.blue : Colors.red,
                   ),
-                  title: Text('${isHome ? 'Thuis' : 'Uit'} #${g.playerNumber}'),
+                  title: Text('${g.teamLabel} #${g.playerNumber} — ${g.type.label}'),
                   trailing: Text(g.formattedTime),
                 );
               },
