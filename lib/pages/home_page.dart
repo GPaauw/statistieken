@@ -106,6 +106,16 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: 'Ongedaan',
+            icon: const Icon(Icons.undo),
+            onPressed: _controller.canUndo
+                ? () {
+                    _controller.undo();
+                    _safeSetState();
+                  }
+                : null,
+          ),
+          IconButton(
             tooltip: 'Exporteer PDF',
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: _exportPdf,
@@ -145,16 +155,7 @@ class _HomePageState extends State<HomePage> {
                               onPressed: _controller.stop,
                               label: const Text('Stop'),
                             ),
-                            OutlinedButton.icon(
-                              icon: const Icon(Icons.undo),
-                              onPressed: _controller.canUndo
-                                  ? () {
-                                      _controller.undo();
-                                      _safeSetState();
-                                    }
-                                  : null,
-                              label: const Text('Undo'),
-                            ),
+                            // Undo moved to AppBar for consistent visibility
                             TextButton.icon(
                               icon: const Icon(Icons.replay),
                               onPressed: _controller.reset,
