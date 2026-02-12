@@ -81134,7 +81134,7 @@ var $async$vx=B.S(function(a,b){if(a===1)return B.O(b,r)
 for(;;)switch(s){case 0:p=q.d
 p===$&&B.a()
 s=2
-return B.W(B.Kd("Uit",p,"wedstrijdverslag.pdf","Thuis"),$async$vx)
+return B.W(B.Kd("Tegenstanders",p,"wedstrijdverslag.pdf","KV Flamingo's"),$async$vx)
 case 2:return B.P(null,r)}})
 return B.Q($async$vx,r)},
 oZ(a,b){return this.a9K(a,b)},
@@ -81235,7 +81235,7 @@ $1(a){return a.b===this.a},
 $S:486}
 B.T5.prototype={
 N(a){var s=this,r=t.E
-return B.Y3(new B.bT(A.i8,B.iH(B.c([A.aI4,A.oC,B.pe(B.c([B.wU(B.awM(A.hR,s.r,s.z,s.e,s.x,s.c,A.cn,"Thuis")),A.HD,B.wU(B.awM(A.lQ,s.w,s.Q,s.f,s.y,s.d,A.kM,"Uit"))],r),A.da,A.ck,0)],r),A.b3,A.bn,A.ck),null),2)}}
+return B.Y3(new B.bT(A.i8,B.iH(B.c([A.aI4,A.oC,B.pe(B.c([B.wU(B.awM(A.hR,s.r,s.z,s.e,s.x,s.c,A.cn,"KV Flamingo's")),A.HD,B.wU(B.awM(A.lQ,s.w,s.Q,s.f,s.y,s.d,A.kM,"Tegenstanders"))],r),A.da,A.ck,0)],r),A.b3,A.bn,A.ck),null),2)}}
 B.U9.prototype={
 N(a){var s=this,r=null,q=s.f,p=new B.aO(B.am(A.q.aC(76.5),q.B()>>>16&255,q.B()>>>8&255,q.B()&255),1,A.a3,-1),o=B.nx(12),n=B.dD(s.d,r,r,r,B.io(r,r,q,r,r,r,r,r,r,r,r,16,r,r,A.cN,r,r,!0,r,r,r,r,r,r,r,r),r,r),m=B.avF(A.OC,A.aI8,new B.alq(s,a)),l=B.N(a).ok.c
 q=l==null?r:l.afe(q,A.r7)
@@ -81264,7 +81264,7 @@ k=m.e
 s=k==null?o:n.d.mN(k)
 n=l?A.Ot:A.Os
 n=B.IU(n,l?A.es:A.CR,o)
-k=l?"Thuis":"Uit"
+k=l?"KV Flamingo's":"Tegenstanders"
 k=B.dD(k+" "+j+" \u2014 "+B.apn(m.d),o,o,o,o,o,o)
 r=s==null
 q=r?o:B.dD("Tegen: "+s,o,o,o,o,o,o)
@@ -81300,7 +81300,7 @@ n=B.tB(j,j,j,j,j,j,j,j,j,A.er,j,j,12,j,A.cM,j,!0,j,j,j,j)
 m=B.asz(A.az9,A.JO)
 l=k.x
 s=new B.a7e(q,l,h,s,k.y,k.z).$0()
-return B.c([i,new B.hA(j,4,j),g,new B.hA(j,16,j),o,new B.hA(j,12,j),B.aHd(j,A.Jg,j,j,j,0,A.NP,k.w,B.ah([0,A.O2,1,A.O5,2,A.r0,3,A.r0,4,A.O4,5,A.O3],t.S,t.PA),j,s,A.Kf,A.Je,j,j,1,m,j,j,j,n,["Tijd","Team","Speler","Type","Tegen","Stand"],j,j,j,A.HS),new B.hA(j,16,j),B.mA("Samenvatting",r,j,j),new B.hA(j,6,j),B.aoM("Totale speeltijd: "+B.j(l.$1(q.e))),B.aoM("Totaal doelpunten: "+q.c.length),B.aoM("Thuis: "+q.a+"  |  Uit: "+q.b)],p)},
+return B.c([i,new B.hA(j,4,j),g,new B.hA(j,16,j),o,new B.hA(j,12,j),B.aHd(j,A.Jg,j,j,j,0,A.NP,k.w,B.ah([0,A.O2,1,A.O5,2,A.r0,3,A.r0,4,A.O4,5,A.O3],t.S,t.PA),j,s,A.Kf,A.Je,j,j,1,m,j,j,j,n,["Tijd","Team","Speler","Type","Tegen","Stand"],j,j,j,A.HS),new B.hA(j,16,j),B.mA("Samenvatting",r,j,j),new B.hA(j,6,j),B.aoM("Totale speeltijd: "+B.j(l.$1(q.e))),B.aoM("Totaal doelpunten: "+q.c.length),B.aoM("KV Flamingo's: "+q.a+"  |  Tegenstanders: "+q.b)],p)},
 $S:491}
 B.a7e.prototype={
 $0(){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e,d,c,b=this,a=B.c([],t.rj)
@@ -81314,7 +81314,7 @@ e=p.$1(h)
 d=B.apn(h.d)
 c=o.$1(h)
 if(c==null)c=""
-a.push(B.c([f,g,e,d,c,""+k+" \u2013 "+j],q))}return a},
+a.push(B.c([f,g,e,d,c,""+k+" - "+j],q))}return a},
 $S:492}
 B.aoc.prototype={
 $1(a){var s,r,q,p,o,n,m=null,l=this.a,k=B.c([new B.bT(A.i8,B.dD("Wie kreeg het doelpunt tegen?",m,m,m,B.io(m,m,l,m,m,m,m,m,m,m,m,18,m,m,A.cN,m,m,!0,m,m,m,m,m,m,m,m),A.eP,m),m)],t.E)
