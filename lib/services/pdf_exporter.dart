@@ -131,29 +131,56 @@ class PdfExporter {
           pw.SizedBox(height: 12),
           pw.Text("Spelerssamenvatting (KV Flamingo's)", style: h2),
           pw.SizedBox(height: 6),
-          // Per-home-player stats: goals scored and conceded
-          pw.Table.fromTextArray(
-            headerStyle: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-            headerDecoration: pw.BoxDecoration(color: p.PdfColors.grey300),
-            cellStyle: cell,
-            headers: ['Speler', 'Doelpunten', 'Tegendoelpunten'],
-            data: () {
-              final rows = <List<String>>[];
-              // iterate player numbers in home team
-              final playerNumbers = c.homePlayers.names.keys.toList()..sort();
-              for (final n in playerNumbers) {
-                final name = c.homePlayers.getName(n);
-                final scored = c.goals.where((g) => g.team == Team.home && g.playerNumber == n).length;
-                final conceded = c.goals.where((g) => g.concededPlayerNumber == n).length;
-                rows.add([name, scored.toString(), conceded.toString()]);
-              }
-              return rows;
-            }(),
-            columnWidths: {
-              0: const pw.FlexColumnWidth(3),
-              1: const pw.FlexColumnWidth(1),
-              2: const pw.FlexColumnWidth(1),
-            },
+          // For each home player render a compact table with goals by type and conceded by type.
+          // Render two player cards per row when space allows.
+          pw.Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final n in (c.homePlayers.names.keys.toList()..sort()))
+                pw.Container(
+                  width: 260,
+                  padding: const pw.EdgeInsets.all(6),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: p.PdfColors.grey700),
+                  ),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(c.homePlayers.getName(n), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                      pw.SizedBox(height: 6),
+                      pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          // Goals scored by type
+                          pw.Expanded(
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text('Doelpunten', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                                pw.SizedBox(height: 4),
+                                _typeTable(c.goals.where((g) => g.team == Team.home && g.playerNumber == n).toList(), cell),
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(width: 8),
+                          // Goals conceded by type
+                          pw.Expanded(
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text('Tegendoelpunten', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                                pw.SizedBox(height: 4),
+                                _typeTable(c.goals.where((g) => g.concededPlayerNumber == n).toList(), cell),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -178,5 +205,33 @@ class PdfExporter {
     );
 
     await Printing.sharePdf(bytes: bytes, filename: fileName);
+  }
+
+  // Helper to render a small table with counts per GoalType for a list of goals.
+  static pw.Widget _typeTable(List<Goal> goals, pw.TextStyle cellStyle) {
+    // Count by type preserving enum order
+    final map = <GoalType, int>{};
+    for (final t in GoalType.values) map[t] = 0;
+    for (final g in goals) {
+      map[g.type] = (map[g.type] ?? 0) + 1;
+    }
+
+    final rows = <List<String>>[];
+    for (final t in GoalType.values) {
+      final cnt = map[t] ?? 0;
+      if (cnt > 0) {
+        rows.add([t.label, cnt.toString()]);
+      }
+    }
+    if (rows.isEmpty) rows.add(['-', '0']);
+
+    return pw.Table.fromTextArray(
+      headers: ['Type', 'Aantal'],
+      data: rows,
+      headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+      cellStyle: cellStyle.copyWith(fontSize: 9),
+      border: pw.TableBorder.all(color: p.PdfColors.grey600, width: .5),
+      columnWidths: {0: const pw.FlexColumnWidth(2), 1: const pw.FlexColumnWidth(1)},
+    );
   }
 }
