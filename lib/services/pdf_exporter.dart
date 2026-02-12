@@ -71,7 +71,7 @@ class PdfExporter {
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text('$homeTeamName vs $awayTeamName', style: h2),
-              pw.Text('Score: ${c.homeScore} – ${c.awayScore}', style: h2),
+              pw.Text('Score: ${c.homeScore} - ${c.awayScore}', style: h2),
             ],
           ),
           pw.SizedBox(height: 12),
