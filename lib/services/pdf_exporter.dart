@@ -185,58 +185,7 @@ class PdfExporter {
           ),
 
           pw.SizedBox(height: 12),
-          pw.Text("Spelerssamenvatting (Tegenstanders)", style: h2),
-          pw.SizedBox(height: 6),
-          // Away players
-          pw.Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final n in (c.awayPlayers.names.keys.toList()..cast<int>()..sort()))
-                pw.Container(
-                  width: 260,
-                  padding: const pw.EdgeInsets.all(6),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: p.PdfColors.grey700),
-                  ),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(c.awayPlayers.getName(n), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(height: 6),
-                      pw.Row(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          // Goals scored by type (for this away player)
-                          pw.Expanded(
-                            child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text('Doelpunten', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                                pw.SizedBox(height: 4),
-                                _typeTable(c.goals.where((g) => g.team == Team.away && g.playerNumber == n).toList(), cell),
-                              ],
-                            ),
-                          ),
-                          pw.SizedBox(width: 8),
-                          // Goals conceded by type (when this away player was the defender)
-                          pw.Expanded(
-                            child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              children: [
-                                pw.Text('Tegendoelpunten', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                                pw.SizedBox(height: 4),
-                                _typeTable(c.goals.where((g) => g.concededPlayerNumber == n).toList(), cell),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
+          // (Tegenstanders samenvatting verwijderd; alleen KV Flamingo's blijft)
         ],
       ),
     );
