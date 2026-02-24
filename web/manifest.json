@@ -1,8 +1,8 @@
 {
-  "name": "Korfbal Statistieken",
-  "short_name": "Korfbal Statistieken",
-  "start_url": "/mijn_webapp/",
-  "scope": "/mijn_webapp/",
+  "name": "Statistieken",
+  "short_name": "Statistieken",
+  "start_url": "/Statistieken/",
+  "scope": "/Statistieken/",
   "display": "standalone",
   "background_color": "#0175C2",
   "theme_color": "#0175C2",

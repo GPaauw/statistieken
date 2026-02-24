@@ -81158,7 +81158,7 @@ s.x.$0()},
 $S:91}
 B.LK.prototype={
 N(a){var s=null
-return new B.yd(A.Ow,"Wedstrijd teller",B.tJ(s,B.asU(A.aN,s,s,A.axN),"Roboto",!0),!1,s)}}
+return new B.yd(A.Ow,"Statistieken",B.tJ(s,B.asU(A.aN,s,s,A.axN),"Roboto",!0),!1,s)}}
 B.MM.prototype={
 G(){return"Team."+this.b}}
 B.fk.prototype={
@@ -92534,7 +92534,7 @@ A.aEK=new B.n(!0,null,null,null,null,null,18,A.cO,null,null,null,null,null,null,
 A.aI9=new B.f3("Scorebord",null,A.aEK,null,null,null,null,null,null)
 A.aIa=new B.f3("Exporteer PDF",null,null,null,null,null,null,null,null)
 A.aIb=new B.f3("Spelersnamen aanpassen",null,null,null,null,null,null,null,null)
-A.aIc=new B.f3("Wedstrijd teller",null,null,null,null,null,null,null,null)
+A.aIc=new B.f3("Statistieken",null,null,null,null,null,null,null,null)
 A.aId=new B.f3("Bewerk namen",null,null,null,null,null,null,null,null)
 A.aIe=new B.f3("Stop",null,null,null,null,null,null,null,null)
 A.aIf=new B.f3("Opslaan",null,null,null,null,null,null,null,null)

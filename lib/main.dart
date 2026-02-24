@@ -15,7 +15,7 @@ class ScoreApp extends StatelessWidget {
     final colorScheme = ColorScheme.fromSeed(seedColor: Colors.indigo);
 
     return MaterialApp(
-      title: 'Wedstrijd teller',
+      title: 'Statistieken',
       theme: ThemeData(
         colorScheme: colorScheme,
         useMaterial3: true,

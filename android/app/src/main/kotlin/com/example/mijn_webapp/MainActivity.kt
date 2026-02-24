@@ -1,4 +1,4 @@
-package com.example.mijn_webapp
+package com.example.Statistieken
 
 import io.flutter.embedding.android.FlutterActivity
 
