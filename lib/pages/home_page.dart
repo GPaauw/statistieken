@@ -282,7 +282,7 @@ class _ScoreBoard extends StatelessWidget {
                     team: Team.home,
                     title: "KV Flamingo's",
                     score: homeScore,
-                    color: Colors.blue.shade600,
+                    color: Colors.blue.shade700,
                     onPick: onHomePick,
                     counts: homeCounts,
                     players: homePlayers,
