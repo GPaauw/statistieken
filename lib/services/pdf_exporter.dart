@@ -2,8 +2,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:pdf/widgets.dart' as pw; // voor Text, Row, Column, etc.
-import 'package:pdf/pdf.dart' as p; // voor PdfColors, PdfGraphics, PdfPoint
+import 'package:pdf/widgets.dart' as pw;
+import 'package:pdf/pdf.dart' as p;
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 
@@ -11,6 +11,13 @@ import '../controllers/match_controller.dart';
 import '../models/goal.dart';
 
 class PdfExporter {
+  // ========= NIEUW: container-schaal =========
+  // 1.5 = 50% groter in zowel breedte als hoogte
+  static const double _containerScale = 1.5;
+
+  // Basis breedte van een spelerskaart (ongewijzigde inhoudsschaal)
+  static const double _cardBaseWidth = 360.0;
+
   static Future<Uint8List> buildReport({
     required MatchController c,
     String homeTeamName = "KV Flamingo's",
@@ -135,7 +142,7 @@ class PdfExporter {
           pw.Text("Spelerssamenvatting (KV Flamingo's)", style: h2),
           pw.SizedBox(height: 6),
 
-          // NIEUW: spelerskaarten (balken + kwart-cirkel heatmaps)
+          // Spelerskaarten
           pw.Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -148,7 +155,11 @@ class PdfExporter {
                       .where((g) => g.team == Team.home && g.playerNumber == n)
                       .toList(),
                   goalsConceded: c.goals.where((g) => g.concededPlayerNumber == n).toList(),
-                  cardWidth: 360, // ~2 per rij op A4
+
+                  // ======= HIER: container 50% breder =======
+                  cardWidth: _cardBaseWidth * _containerScale,
+                  // ======= en 50% hoger via containerScale (zie signature) =======
+                  containerScale: _containerScale,
                 ),
             ],
           ),
@@ -402,7 +413,7 @@ class PdfExporter {
 
     // Stack gebruikt top-links met y omlaag -> spiegelen met hoogte
     final left = tx - 7;
-    final top = height - ty - 7;
+    final top  = height - ty - 7;
 
     return pw.Positioned(
       left: left,
@@ -446,8 +457,8 @@ class PdfExporter {
     required double middleGapWidth,
     required double rightWidth,
   }) {
-    final left = _distanceCounts(goalsScored); // {2m,5m,7m}
-    final right = _distanceCounts(goalsConceded); // {2m,5m,7m}
+    final left = _distanceCounts(goalsScored);     // {2m,5m,7m}
+    final right = _distanceCounts(goalsConceded);  // {2m,5m,7m}
 
     final maxLeft = [left['2m']!, left['5m']!, left['7m']!].reduce((a, b) => a > b ? a : b);
     final maxRight = [right['2m']!, right['5m']!, right['7m']!].reduce((a, b) => a > b ? a : b);
@@ -530,8 +541,8 @@ class PdfExporter {
             ),
 
             // Randlabels (ongeveer vaste posities vanaf onderrand)
-            _edgeLabel('2m', alignLeft: !rightSide, bottom: height * .25),
-            _edgeLabel('5m', alignLeft: !rightSide, bottom: height * .50),
+            _edgeLabel('2m', alignLeft: !rightSide, bottom: height * .10),
+            _edgeLabel('5m', alignLeft: !rightSide, bottom: height * .30),
             _edgeLabel('7m', alignLeft: !rightSide, bottom: height * .80),
           ],
         ),
@@ -583,13 +594,16 @@ class PdfExporter {
     required String playerName,
     required List<Goal> goalsScored,
     required List<Goal> goalsConceded,
-    double cardWidth = 360,
+    double cardWidth = _cardBaseWidth,
+
+    // ========= NIEUW =========
+    double containerScale = 1.0, // 1.5 = 50% groter in hoogte & breedte
   }) {
     final typesOrder = _nonDistanceTypes();
     final scoredCounts = _countByType(goalsScored);
     final concededCounts = _countByType(goalsConceded);
 
-    // Layout-constanten
+    // Layout-constanten (inhoud blijft dezelfde grootte)
     const horizontalPad = 10.0;
     const verticalPad = 8.0;
     const colGap = 12.0;
@@ -597,16 +611,26 @@ class PdfExporter {
     // Breedtes 3-koloms balkenlayout
     final innerWidth = cardWidth - 2 * horizontalPad;
     final availableWidth = innerWidth - 2 * colGap; // Ruimte voor de kolommen zelf
-    final colLeftWidth = availableWidth * 0.37; // balken links
+    final colLeftWidth   = availableWidth * 0.37; // balken links
     final colCenterWidth = availableWidth * 0.26; // labels
-    final colRightWidth = availableWidth * 0.37; // balken rechts
+    final colRightWidth  = availableWidth * 0.37; // balken rechts
 
-    // Hoogte van de balken-sectie (voor nette uitlijning met kwartcirkel-hoogte)
-    final barsHeight = _barsBlockHeight(typesOrder.length);
-    final heatmapHeight = math.max(110.0, barsHeight); // voldoende groot en consistent
+    // Hoogte van de balken-sectie (inhoud blijft gelijk)
+    final barsHeight    = _barsBlockHeight(typesOrder.length);
+    final heatmapHeight = math.max(110.0, barsHeight); // kwartcirkel NIET opschalen
+
+    // ======= NIEUW: totale basis-hoogte van de kaart (ongeveer exact) =======
+    // Opbouw: 2*padding + (titelrij ~22) + 6 + bars + 10 + heatmap
+    const double titleRowEstimate = 22.0;
+    final double baseHeight =
+        (2 * verticalPad) + titleRowEstimate + 6 + barsHeight + 10 + heatmapHeight;
+
+    // Doel: container 1.5x zo hoog; inhoud blijft ongewijzigd
+    final double containerHeight = baseHeight * containerScale;
 
     return pw.Container(
-      width: cardWidth,
+      width: cardWidth,                 // 1.5x breder meegegeven bij aanroep
+      height: containerHeight,         // 1.5x hoger via containerScale
       padding: const pw.EdgeInsets.symmetric(horizontal: horizontalPad, vertical: verticalPad),
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: p.PdfColors.grey600, width: 0.8),
@@ -677,11 +701,14 @@ class PdfExporter {
           _distanceQuarterSection(
             goalsScored: goalsScored,
             goalsConceded: goalsConceded,
-            height: heatmapHeight,
+            height: heatmapHeight,                         // NIET schalen
             leftWidth: colLeftWidth,
             middleGapWidth: colCenterWidth + 2 * colGap,
             rightWidth: colRightWidth,
           ),
+
+          // Resthoogte (als container hoger is dan inhoud) wordt automatisch
+          // opgevuld als witruimte onderin; geen extra SizedBox nodig.
         ],
       ),
     );
