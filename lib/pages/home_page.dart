@@ -45,7 +45,6 @@ class _HomePageState extends State<HomePage> {
       c: _controller,
       homeTeamName: "KV Flamingo's",
       awayTeamName: 'Tegenstanders',
-      fileName: 'wedstrijdverslag.pdf',
     );
   }
 

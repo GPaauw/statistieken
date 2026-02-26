@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:pdf/widgets.dart' as pw;    // voor Text, Row, Column, etc.
 import 'package:pdf/pdf.dart' as p;         // voor PdfColors, PdfGraphics, PdfPoint
 import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
 
 import '../controllers/match_controller.dart';
 import '../models/goal.dart';
@@ -167,13 +168,16 @@ class PdfExporter {
     String homeTeamName = "KV Flamingo's",
     String awayTeamName = 'Tegenstanders',
     DateTime? dateTime,
-    String fileName = 'wedstrijdverslag.pdf',
   }) async {
+    final now = dateTime ?? DateTime.now();
+    final formattedDate = DateFormat('dd-MM-yyyy').format(now);
+    final fileName = 'wedstrijdverslag_$formattedDate.pdf';
+
     final bytes = await buildReport(
       c: c,
       homeTeamName: homeTeamName,
       awayTeamName: awayTeamName,
-      dateTime: dateTime,
+      dateTime: now,
     );
 
     await Printing.sharePdf(bytes: bytes, filename: fileName);
