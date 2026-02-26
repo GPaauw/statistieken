@@ -395,12 +395,12 @@ class PdfExporter {
 
             // Labels in the gutter (outside the arc)
             if (!rightSide) ...[
-              pw.Positioned(left: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(left: 0, bottom: height * .30, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: 0, bottom: height * .20, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: 0, bottom: height * .40, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
               pw.Positioned(left: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
             ] else ...[
-              pw.Positioned(right: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(right: 0, bottom: height * .30, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: 0, bottom: height * .20, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: 0, bottom: height * .40, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
               pw.Positioned(right: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
             ],
           ],
@@ -454,7 +454,7 @@ class PdfExporter {
     final colRightWidth = availableWidth * 0.37;
 
     final barsHeight = _barsBlockHeight(typesOrder.length);
-    final heatmapHeight = math.max(150.0, barsHeight); // enlarge a bit; not scaled with container
+    final heatmapHeight = math.max(125.0, barsHeight); // enlarge a bit; not scaled with container
 
     const double titleRowEstimate = 22.0;
     final double baseHeight = (2 * verticalPad) + titleRowEstimate + 6 + barsHeight + 10 + heatmapHeight;
