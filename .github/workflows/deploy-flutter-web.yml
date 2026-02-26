@@ -29,10 +29,16 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Build Flutter Web (release)
-        run: flutter build web --release
+      # ---- BELANGRIJK ----
+      # Correct base-href + hash routing (voorkomt witte pagina)
+      - name: Build Flutter Web (correct base-href)
+        run: flutter build web --release --base-href "/statistieken/" --pwa-strategy=none --web-renderer canvaskit
 
-      - name: Upload artifact (build/web)
+      # 404 fallback die index.html serveert
+      - name: Add 404 fallback
+        run: cp build/web/index.html build/web/404.html
+
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
@@ -40,10 +46,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
-        id: deployment
         uses: actions/deploy-pages@v4
