@@ -2,8 +2,8 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:pdf/widgets.dart' as pw;    // voor Text, Row, Column, etc.
-import 'package:pdf/pdf.dart' as p;         // voor PdfColors, PdfGraphics, PdfPoint
+import 'package:pdf/widgets.dart' as pw; // voor Text, Row, Column, etc.
+import 'package:pdf/pdf.dart' as p; // voor PdfColors, PdfGraphics, PdfPoint
 import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
 
@@ -140,7 +140,7 @@ class PdfExporter {
             spacing: 12,
             runSpacing: 12,
             children: [
-              for (final n in (c.homePlayers.names.keys.toList()..cast<int>()..sort()))
+              for (final n in (c.homePlayers.names.keys.toList()..sort()))
                 _playerCard(
                   playerNumber: n,
                   playerName: c.homePlayers.getName(n),
@@ -359,11 +359,11 @@ class PdfExporter {
     int c2 = 0, c5 = 0, c7 = 0;
     for (final g in goals) {
       final lbl = g.type.label.toLowerCase();
-      if (lbl.contains('7m')) c2++;
+      if (lbl.contains('2m')) c2++;
       if (lbl.contains('5m')) c5++;
-      if (lbl.contains('2m')) c7++;
+      if (lbl.contains('7m')) c7++;
     }
-    return {'7m': c2, '5m': c5, '2m': c7};
+    return {'7m': c7, '5m': c5, '2m': c2};
   }
 
   static p.PdfColor _lerpColor(p.PdfColor a, p.PdfColor b, double t) {
@@ -402,7 +402,7 @@ class PdfExporter {
 
     // Stack gebruikt top-links met y omlaag -> spiegelen met hoogte
     final left = tx - 7;
-    final top  = height - ty - 7;
+    final top = height - ty - 7;
 
     return pw.Positioned(
       left: left,
@@ -436,25 +436,28 @@ class PdfExporter {
     );
   }
 
-  // Twee kwart-‘heatmaps’ met functionele painter (compatibel met package:pdf)
-  static pw.Widget _distanceSemiCirclesSection({
+  // Twee kwart-‘heatmaps’ met vaste breedtes zodat ze 1-op-1
+  // uitlijnen met de rode/groene balkkolommen.
+  static pw.Widget _distanceQuarterSection({
     required List<Goal> goalsScored,
     required List<Goal> goalsConceded,
-    double height = 110,
+    required double height,
+    required double leftWidth,
+    required double middleGapWidth,
+    required double rightWidth,
   }) {
-    final left = _distanceCounts(goalsScored);     // {2m,5m,7m}
-    final right = _distanceCounts(goalsConceded);  // {2m,5m,7m}
+    final left = _distanceCounts(goalsScored); // {2m,5m,7m}
+    final right = _distanceCounts(goalsConceded); // {2m,5m,7m}
 
     final maxLeft = [left['2m']!, left['5m']!, left['7m']!].reduce((a, b) => a > b ? a : b);
     final maxRight = [right['2m']!, right['5m']!, right['7m']!].reduce((a, b) => a > b ? a : b);
-
-    final widthEach = height * 1.7;
 
     pw.Widget quarter({
       required bool rightSide,
       required Map<String, int> values,
       required p.PdfColor baseColor,
       required int maxValue,
+      required double width,
     }) {
       // kleuren (licht -> donker)
       final shades = [
@@ -465,14 +468,14 @@ class PdfExporter {
       final seq = [values['7m']!, values['5m']!, values['2m']!]; // buiten -> binnen
 
       return pw.Container(
-        width: widthEach,
+        width: width,
         height: height,
         child: pw.Stack(
           children: [
             // Clip op de kaart en teken volledige cirkels met middelpunt in de HOEK.
             pw.ClipRect(
               child: pw.CustomPaint(
-                size: p.PdfPoint(widthEach, height),
+                size: p.PdfPoint(width, height),
                 painter: (p.PdfGraphics canvas, p.PdfPoint size) {
                   final cx = rightSide ? size.x : 0.0;
                   final cy = 0.0;
@@ -517,13 +520,13 @@ class PdfExporter {
 
             // Waarden in de ringen (buiten -> binnen)
             _ringNumberOverlayQuarter(
-              rightSide: rightSide, width: widthEach, height: height, ringIndex: 0, value: seq[0],
+              rightSide: rightSide, width: width, height: height, ringIndex: 0, value: seq[0],
             ),
             _ringNumberOverlayQuarter(
-              rightSide: rightSide, width: widthEach, height: height, ringIndex: 1, value: seq[1],
+              rightSide: rightSide, width: width, height: height, ringIndex: 1, value: seq[1],
             ),
             _ringNumberOverlayQuarter(
-              rightSide: rightSide, width: widthEach, height: height, ringIndex: 2, value: seq[2],
+              rightSide: rightSide, width: width, height: height, ringIndex: 2, value: seq[2],
             ),
 
             // Randlabels (ongeveer vaste posities vanaf onderrand)
@@ -535,29 +538,43 @@ class PdfExporter {
       );
     }
 
-    return pw.Container(
+    return pw.SizedBox(
       height: height,
       child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
-          // Linker kwart (groen)
-          quarter(
-            rightSide: false,
-            values: left,
-            baseColor: _green,
-            maxValue: maxLeft,
+          // Linker kwart (groen) exact onder de linker balkkolom
+          pw.SizedBox(
+            width: leftWidth,
+            child: quarter(
+              rightSide: false,
+              values: left,
+              baseColor: _green,
+              maxValue: maxLeft,
+              width: leftWidth,
+            ),
           ),
-          // Rechter kwart (rood)
-          quarter(
-            rightSide: true,
-            values: right,
-            baseColor: _red,
-            maxValue: maxRight,
+          // Midden-gap precies gelijk aan labels + kolom-gaps
+          pw.SizedBox(width: middleGapWidth),
+          // Rechter kwart (rood) exact onder de rechter balkkolom
+          pw.SizedBox(
+            width: rightWidth,
+            child: quarter(
+              rightSide: true,
+              values: right,
+              baseColor: _red,
+              maxValue: maxRight,
+              width: rightWidth,
+            ),
           ),
         ],
       ),
     );
+  }
+
+  static double _barsBlockHeight(int itemCount) {
+    if (itemCount <= 0) return _barHeight;
+    return itemCount * _barHeight + (itemCount - 1) * _barGap;
   }
 
   // De complete spelerskaart in 3 kolommen + kwart-cirkel heatmaps eronder
@@ -579,10 +596,14 @@ class PdfExporter {
 
     // Breedtes 3-koloms balkenlayout
     final innerWidth = cardWidth - 2 * horizontalPad;
-    final colLeftWidth = innerWidth * 0.37;   // balken links
-    final colCenterWidth = innerWidth * 0.26; // labels
-    final colRightWidth = innerWidth * 0.37;  // balken rechts
+    final availableWidth = innerWidth - 2 * colGap; // Ruimte voor de kolommen zelf
+    final colLeftWidth = availableWidth * 0.37; // balken links
+    final colCenterWidth = availableWidth * 0.26; // labels
+    final colRightWidth = availableWidth * 0.37; // balken rechts
 
+    // Hoogte van de balken-sectie (voor nette uitlijning met kwartcirkel-hoogte)
+    final barsHeight = _barsBlockHeight(typesOrder.length);
+    final heatmapHeight = math.max(110.0, barsHeight); // voldoende groot en consistent
 
     return pw.Container(
       width: cardWidth,
@@ -599,12 +620,16 @@ class PdfExporter {
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('Doelpunten', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _green)),
+              pw.Text('Doelpunten',
+                  style: pw.TextStyle(
+                      fontSize: 12, fontWeight: pw.FontWeight.bold, color: _green)),
               pw.Text(
                 playerName,
                 style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
               ),
-              pw.Text('Tegendoelpunten', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red)),
+              pw.Text('Tegendoelpunten',
+                  style: pw.TextStyle(
+                      fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red)),
             ],
           ),
           pw.SizedBox(height: 6),
@@ -622,7 +647,6 @@ class PdfExporter {
                   fill: _green,
                   fillBack: _greenBack,
                   maxWidth: colLeftWidth,
-                  // fixedMax: sharedMax,
                 ),
               ),
               pw.SizedBox(width: colGap),
@@ -643,18 +667,20 @@ class PdfExporter {
                   fill: _red,
                   fillBack: _redBack,
                   maxWidth: colRightWidth,
-                  // fixedMax: sharedMax,
                 ),
               ),
             ],
           ),
 
-          // Kwart-cirkel afstand heatmaps
+          // Kwart-cirkel afstand heatmaps - exact onder de kolommen uitgelijnd
           pw.SizedBox(height: 10),
-          _distanceSemiCirclesSection(
+          _distanceQuarterSection(
             goalsScored: goalsScored,
             goalsConceded: goalsConceded,
-            height: 110,
+            height: heatmapHeight,
+            leftWidth: colLeftWidth,
+            middleGapWidth: colCenterWidth + 2 * colGap,
+            rightWidth: colRightWidth,
           ),
         ],
       ),
