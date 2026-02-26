@@ -203,9 +203,7 @@ class PdfExporter {
     );
   }
 
-  // ===========================================================================
   // ======================= NIEUWE HELPERS VOOR KAART =========================
-  // ===========================================================================
 
   // --- CONFIG ---
   static const _barHeight = 16.0;
@@ -218,10 +216,10 @@ class PdfExporter {
   static final _red = p.PdfColors.red600;
   static final _redBack = p.PdfColors.red300;
 
-  // Afstandstypen herkenning (labels bevatten '2m' / '5m' / '7m')
+  // Afstandstypen herkenning (labels bevatten '7m' / '5m' / '2m')
   static bool _isDistanceType(GoalType t) {
     final lbl = t.label.toLowerCase();
-    return lbl.contains('2m') || lbl.contains('5m') || lbl.contains('7m');
+    return lbl.contains('7m') || lbl.contains('5m') || lbl.contains('2m');
   }
 
   static List<GoalType> _nonDistanceTypes() {
@@ -352,16 +350,16 @@ class PdfExporter {
     );
   }
 
-  // ======= Afstand (2m/5m/7m) =======
+  // ======= Afstand (7m/5m/2m) =======
   static Map<String, int> _distanceCounts(List<Goal> goals) {
     int c2 = 0, c5 = 0, c7 = 0;
     for (final g in goals) {
       final lbl = g.type.label.toLowerCase();
-      if (lbl.contains('2m')) c2++;
+      if (lbl.contains('7m')) c2++;
       if (lbl.contains('5m')) c5++;
-      if (lbl.contains('7m')) c7++;
+      if (lbl.contains('2m')) c7++;
     }
-    return {'2m': c2, '5m': c5, '7m': c7};
+    return {'7m': c2, '5m': c5, '2m': c7};
   }
 
   static p.PdfColor _lerpColor(p.PdfColor a, p.PdfColor b, double t) {
@@ -525,9 +523,9 @@ class PdfExporter {
             ),
 
             // Randlabels (ongeveer vaste posities vanaf onderrand)
-            _edgeLabel('7m', alignLeft: !rightSide, bottom: height * .30),
-            _edgeLabel('5m', alignLeft: !rightSide, bottom: height * .55),
-            _edgeLabel('2m', alignLeft: !rightSide, bottom: height * .80),
+            _edgeLabel('2m', alignLeft: !rightSide, bottom: height * .25),
+            _edgeLabel('5m', alignLeft: !rightSide, bottom: height * .50),
+            _edgeLabel('7m', alignLeft: !rightSide, bottom: height * .80),
           ],
         ),
       );
@@ -581,10 +579,6 @@ class PdfExporter {
     final colCenterWidth = innerWidth * 0.26; // labels
     final colRightWidth = innerWidth * 0.37;  // balken rechts
 
-    // Wil je links/rechts op dezelfde schaal? -> deblokkeer sharedMax + geef fixedMax mee.
-    // final sharedMax = [
-    //   for (final t in typesOrder) math.max(scoredCounts[t] ?? 0, concededCounts[t] ?? 0)
-    // ].fold(0, (a, b) => a > b ? a : b);
 
     return pw.Container(
       width: cardWidth,
