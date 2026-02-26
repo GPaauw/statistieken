@@ -24,21 +24,20 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: "stable"
+          channel: stable
 
       - name: Flutter pub get
         run: flutter pub get
 
-      # ---- BELANGRIJK ----
-      # Correct base-href + hash routing (voorkomt witte pagina)
-      - name: Build Flutter Web (correct base-href)
-        run: flutter build web --release --base-href "/statistieken/" --pwa-strategy=none --web-renderer canvaskit
+      # Belangrijk: correcte base-href voor GitHub Pages
+      - name: Build Flutter Web (release)
+        run: flutter build web --release --base-href "/statistieken/"
 
-      # 404 fallback die index.html serveert
+      # 404 fallback -> serve index.html voor alle routes
       - name: Add 404 fallback
         run: cp build/web/index.html build/web/404.html
 
-      - name: Upload artifact
+      - name: Upload artifact (build/web)
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
