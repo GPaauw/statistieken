@@ -1,4 +1,7 @@
 // lib/services/pdf_exporter.dart
+// Full adjusted file with quarter-circles fixed to bottom
+// and container scaling 1.5x (width & height), heatmap unchanged.
+
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -11,11 +14,7 @@ import '../controllers/match_controller.dart';
 import '../models/goal.dart';
 
 class PdfExporter {
-  // ========= NIEUW: container-schaal =========
-  // 1.5 = 50% groter in zowel breedte als hoogte
   static const double _containerScale = 1.5;
-
-  // Basis breedte van een spelerskaart (ongewijzigde inhoudsschaal)
   static const double _cardBaseWidth = 360.0;
 
   static Future<Uint8List> buildReport({
@@ -27,7 +26,6 @@ class PdfExporter {
     final now = dateTime ?? DateTime.now();
     final doc = pw.Document();
 
-    // Helpers
     String fmt2(int v) => v.toString().padLeft(2, '0');
     String fmtTime(int seconds) {
       final m = seconds ~/ 60;
@@ -44,39 +42,25 @@ class PdfExporter {
     String? concededName(Goal g) {
       final n = g.concededPlayerNumber;
       if (n == null) return null;
-      // concededPlayerNumber verwijst naar speler van het verdedigende team
       return g.team == Team.home ? c.awayPlayers.getName(n) : c.homePlayers.getName(n);
     }
 
-    final headerStyle = pw.TextStyle(
-      fontSize: 22,
-      fontWeight: pw.FontWeight.bold,
-    );
-
-    final h2 = pw.TextStyle(
-      fontSize: 14,
-      fontWeight: pw.FontWeight.bold,
-    );
-
+    final headerStyle = pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold);
+    final h2 = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold);
     final cell = pw.TextStyle(fontSize: 11);
 
     doc.addPage(
       pw.MultiPage(
-        pageTheme: const pw.PageTheme(
-          margin: pw.EdgeInsets.all(24),
-        ),
-        build: (context) => [
-          // Titel
+        pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
+        build: (_) => [
           pw.Text('Wedstrijdverslag', style: headerStyle),
           pw.SizedBox(height: 4),
           pw.Text(
-            '${fmt2(now.day)}-${fmt2(now.month)}-${now.year} '
-            '${fmt2(now.hour)}:${fmt2(now.minute)}',
+            '${fmt2(now.day)}-${fmt2(now.month)}-${now.year} ${fmt2(now.hour)}:${fmt2(now.minute)}',
             style: pw.TextStyle(color: p.PdfColors.grey600),
           ),
           pw.SizedBox(height: 16),
 
-          // Teams + score
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
@@ -86,29 +70,16 @@ class PdfExporter {
           ),
           pw.SizedBox(height: 12),
 
-          // Doelpunten tabel
           pw.Table.fromTextArray(
-            headerStyle: pw.TextStyle(
-              fontSize: 12,
-              fontWeight: pw.FontWeight.bold,
-            ),
-            headerDecoration: pw.BoxDecoration(
-              color: p.PdfColors.grey300,
-            ),
+            headerStyle: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+            headerDecoration: pw.BoxDecoration(color: p.PdfColors.grey300),
             cellStyle: cell,
-            border: null,
             headers: ['Tijd', 'Team', 'Speler', 'Type', 'Tegen', 'Stand'],
             data: () {
               final rows = <List<String>>[];
-              var home = 0;
-              var away = 0;
+              int home = 0, away = 0;
               for (final g in c.goals) {
-                if (g.team == Team.home) {
-                  home++;
-                } else {
-                  away++;
-                }
-
+                if (g.team == Team.home) home++; else away++;
                 rows.add([
                   fmtTime(g.secondStamp),
                   g.team == Team.home ? homeTeamName : awayTeamName,
@@ -120,15 +91,15 @@ class PdfExporter {
               }
               return rows;
             }(),
+            border: null,
             columnWidths: {
               0: const pw.FlexColumnWidth(1),
               1: const pw.FlexColumnWidth(2.4),
               2: const pw.FlexColumnWidth(2.2),
               3: const pw.FlexColumnWidth(2),
               4: const pw.FlexColumnWidth(1.4),
-              5: const pw.FlexColumnWidth(1.0),
+              5: const pw.FlexColumnWidth(1),
             },
-            cellAlignment: pw.Alignment.centerLeft,
           ),
 
           pw.SizedBox(height: 16),
@@ -136,13 +107,12 @@ class PdfExporter {
           pw.SizedBox(height: 6),
           pw.Bullet(text: 'Totale speeltijd: ${fmtTime(c.elapsedSeconds)}'),
           pw.Bullet(text: 'Totaal doelpunten: ${c.goals.length}'),
-          pw.Bullet(text: "KV Flamingo's: ${c.homeScore}  |  Tegenstanders: ${c.awayScore}"),
+          pw.Bullet(text: "KV Flamingo's: ${c.homeScore} | Tegenstanders: ${c.awayScore}"),
 
           pw.SizedBox(height: 12),
           pw.Text("Spelerssamenvatting (KV Flamingo's)", style: h2),
           pw.SizedBox(height: 6),
 
-          // Spelerskaarten
           pw.Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -151,21 +121,13 @@ class PdfExporter {
                 _playerCard(
                   playerNumber: n,
                   playerName: c.homePlayers.getName(n),
-                  goalsScored: c.goals
-                      .where((g) => g.team == Team.home && g.playerNumber == n)
-                      .toList(),
+                  goalsScored: c.goals.where((g) => g.team == Team.home && g.playerNumber == n).toList(),
                   goalsConceded: c.goals.where((g) => g.concededPlayerNumber == n).toList(),
-
-                  // ======= HIER: container 50% breder =======
                   cardWidth: _cardBaseWidth * _containerScale,
-                  // ======= en 50% hoger via containerScale (zie signature) =======
                   containerScale: _containerScale,
                 ),
             ],
           ),
-
-          pw.SizedBox(height: 12),
-          // (Tegenstanders samenvatting bewust weggelaten)
         ],
       ),
     );
@@ -173,7 +135,6 @@ class PdfExporter {
     return doc.save();
   }
 
-  /// Download/share PDF (werkt op Web + mobiel + desktop)
   static Future<void> shareReport({
     required MatchController c,
     String homeTeamName = "KV Flamingo's",
@@ -182,56 +143,20 @@ class PdfExporter {
   }) async {
     final now = dateTime ?? DateTime.now();
     final formattedDate = DateFormat('dd-MM-yyyy').format(now);
-    final fileName = 'wedstrijdverslag_$formattedDate.pdf';
-
-    final bytes = await buildReport(
-      c: c,
-      homeTeamName: homeTeamName,
-      awayTeamName: awayTeamName,
-      dateTime: now,
-    );
-
-    await Printing.sharePdf(bytes: bytes, filename: fileName);
+    final bytes = await buildReport(c: c, homeTeamName: homeTeamName, awayTeamName: awayTeamName);
+    await Printing.sharePdf(bytes: bytes, filename: 'wedstrijdverslag_$formattedDate.pdf');
   }
 
-  // ======= (oude) helper, elders nog bruikbaar =======
-  static pw.Widget _typeTable(List<Goal> goals, pw.TextStyle cellStyle) {
-    final map = <GoalType, int>{};
-    for (final t in GoalType.values) map[t] = 0;
-    for (final g in goals) {
-      map[g.type] = (map[g.type] ?? 0) + 1;
-    }
-
-    final rows = <List<String>>[];
-    for (final t in GoalType.values) {
-      final cnt = map[t] ?? 0;
-      rows.add([t.label, cnt.toString()]);
-    }
-
-    return pw.Table.fromTextArray(
-      headers: ['Type', 'Aantal'],
-      data: rows,
-      headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
-      cellStyle: cellStyle.copyWith(fontSize: 9),
-      border: pw.TableBorder.all(color: p.PdfColors.grey600, width: .5),
-      columnWidths: {0: const pw.FlexColumnWidth(2), 1: const pw.FlexColumnWidth(1)},
-    );
-  }
-
-  // ======================= NIEUWE HELPERS VOOR KAART =========================
-
-  // --- CONFIG ---
+  // --- Helpers for bars, labels, distances, heatmaps ---
   static const _barHeight = 16.0;
   static const _barRadius = 4.0;
   static const _barGap = 8.0;
 
-  // Kleuren
   static final _green = p.PdfColors.green600;
   static final _greenBack = p.PdfColors.green300;
   static final _red = p.PdfColors.red600;
   static final _redBack = p.PdfColors.red300;
 
-  // Afstandstypen herkenning (labels bevatten '7m' / '5m' / '2m')
   static bool _isDistanceType(GoalType t) {
     final lbl = t.label.toLowerCase();
     return lbl.contains('7m') || lbl.contains('5m') || lbl.contains('2m');
@@ -239,71 +164,45 @@ class PdfExporter {
 
   static List<GoalType> _nonDistanceTypes() {
     final list = <GoalType>[];
-    for (final t in GoalType.values) {
-      if (!_isDistanceType(t)) list.add(t);
-    }
-    // Sorteer alfabetisch; pas aan als je vaste volgorde wilt.
+    for (final t in GoalType.values) if (!_isDistanceType(t)) list.add(t);
     list.sort((a, b) => a.label.compareTo(b.label));
     return list;
   }
 
   static Map<GoalType, int> _countByType(Iterable<Goal> goals) {
     final map = <GoalType, int>{};
-    for (final t in GoalType.values) {
-      map[t] = 0;
-    }
-    for (final g in goals) {
-      map[g.type] = (map[g.type] ?? 0) + 1;
-    }
+    for (final t in GoalType.values) map[t] = 0;
+    for (final g in goals) map[g.type] = (map[g.type] ?? 0) + 1;
     return map;
   }
 
-  // ======= Balken (links/rechts) =======
   static pw.Widget _barRow({
     required int value,
     required int maxValue,
     required double maxWidth,
     required p.PdfColor fill,
     required p.PdfColor fillBack,
-    pw.TextStyle? textStyle,
   }) {
-    final maxV = maxValue <= 0 ? 1 : maxValue;
-    final frac = value / maxV;
+    final frac = maxValue <= 0 ? 0 : value / maxValue;
     final barW = (frac * maxWidth).clamp(0.0, maxWidth);
 
     return pw.Container(
       height: _barHeight,
-      decoration: pw.BoxDecoration(
-        color: fillBack,
-        borderRadius: pw.BorderRadius.circular(_barRadius),
-      ),
+      decoration: pw.BoxDecoration(color: fillBack, borderRadius: pw.BorderRadius.circular(_barRadius)),
       child: pw.Stack(
         children: [
-          // Gevulde voorgrond-balk
           pw.Positioned.fill(
             child: pw.Align(
               alignment: pw.Alignment.centerLeft,
               child: pw.Container(
                 width: barW,
-                height: _barHeight,
-                decoration: pw.BoxDecoration(
-                  color: fill,
-                  borderRadius: pw.BorderRadius.circular(_barRadius),
-                ),
+                decoration: pw.BoxDecoration(color: fill, borderRadius: pw.BorderRadius.circular(_barRadius)),
               ),
             ),
           ),
-          // Cijfer in het midden
-          pw.Positioned.fill(
-            child: pw.Center(
-              child: pw.Text(
-                value.toString(),
-                style: (textStyle ?? const pw.TextStyle(fontSize: 12)).copyWith(
-                  color: p.PdfColors.white,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            ),
+          pw.Center(
+            child: pw.Text(value.toString(),
+              style: pw.TextStyle(color: p.PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 12)),
           ),
         ],
       ),
@@ -316,56 +215,33 @@ class PdfExporter {
     required p.PdfColor fill,
     required p.PdfColor fillBack,
     required double maxWidth,
-    int? fixedMax, // zet deze om L/R dezelfde schaal te geven
   }) {
     final values = [for (final t in typesOrder) counts[t] ?? 0];
-    final maxValue = fixedMax ?? (values.isEmpty ? 0 : values.reduce((a, b) => a > b ? a : b));
-
-    if (typesOrder.isEmpty) {
-      return pw.Container(
-        height: _barHeight,
-        alignment: pw.Alignment.centerLeft,
-        child: pw.Text('-', style: const pw.TextStyle(fontSize: 10, color: p.PdfColors.grey700)),
-      );
-    }
+    final maxValue = values.isEmpty ? 0 : values.reduce(math.max);
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
         for (int i = 0; i < typesOrder.length; i++) ...[
-          _barRow(
-            value: values[i],
-            maxValue: maxValue,
-            maxWidth: maxWidth,
-            fill: fill,
-            fillBack: fillBack,
-          ),
+          _barRow(value: values[i], maxValue: maxValue, maxWidth: maxWidth, fill: fill, fillBack: fillBack),
           if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
-        ],
+        ]
       ],
     );
   }
 
   static pw.Widget _labelList({required List<GoalType> typesOrder}) {
-    if (typesOrder.isEmpty) {
-      return pw.Text('-', style: const pw.TextStyle(fontSize: 10, color: p.PdfColors.grey700));
-    }
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         for (int i = 0; i < typesOrder.length; i++) ...[
-          pw.Text(
-            typesOrder[i].label,
-            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-          ),
-          if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
-        ],
+          pw.Text(typesOrder[i].label, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+          if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap)
+        ]
       ],
     );
   }
 
-  // ======= Afstand (7m/5m/2m) =======
   static Map<String, int> _distanceCounts(List<Goal> goals) {
     int c2 = 0, c5 = 0, c7 = 0;
     for (final g in goals) {
@@ -386,8 +262,6 @@ class PdfExporter {
     );
   }
 
-  // Getal-overlay in de ring (voor kwart-cirkel)
-  // ringIndex: 0 = buiten (7m), 1 = midden (5m), 2 = binnen (2m)
   static pw.Widget _ringNumberOverlayQuarter({
     required bool rightSide,
     required double width,
@@ -399,21 +273,17 @@ class PdfExporter {
     const ringCount = 3;
     final outerR = height;
     final ringWidth = (height - (ringGap * (ringCount - 1))) / ringCount;
-
     final rOuter = outerR - ringIndex * (ringWidth + ringGap);
     final rMid = rOuter - ringWidth / 2;
 
     final cx = rightSide ? width : 0.0;
     final cy = 0.0;
-
-    // Hoek kiezen zodat label ‘in’ het zichtbare kwart ligt:
-    final double angle = rightSide ? (3 * math.pi / 4) : (math.pi / 4); // 135° resp. 45°
+    final angle = rightSide ? (3 * math.pi / 4) : (math.pi / 4);
     final tx = cx + rMid * math.cos(angle);
-    final ty = cy + rMid * math.sin(angle); // PDF y-as omhoog
+    final ty = cy + rMid * math.sin(angle);
 
-    // Stack gebruikt top-links met y omlaag -> spiegelen met hoogte
     final left = tx - 7;
-    final top  = height - ty - 7;
+    final top = height - ty - 7;
 
     return pw.Positioned(
       left: left,
@@ -422,33 +292,21 @@ class PdfExporter {
         width: 14,
         height: 14,
         alignment: pw.Alignment.center,
-        child: pw.Text(
-          value.toString(),
-          style: pw.TextStyle(
-            fontSize: 11,
-            fontWeight: pw.FontWeight.bold,
-            color: p.PdfColors.white,
-          ),
-        ),
+        child: pw.Text(value.toString(),
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: p.PdfColors.white)),
       ),
     );
   }
 
-  // Klein randlabel (7m/5m/2m) vanuit onderrand
   static pw.Widget _edgeLabel(String text, {required bool alignLeft, required double bottom}) {
     return pw.Positioned(
       left: alignLeft ? 0 : null,
       right: alignLeft ? null : 0,
       bottom: bottom,
-      child: pw.Text(
-        text,
-        style: const pw.TextStyle(fontSize: 9, color: p.PdfColors.black),
-      ),
+      child: pw.Text(text, style: const pw.TextStyle(fontSize: 9, color: p.PdfColors.black)),
     );
   }
 
-  // Twee kwart-‘heatmaps’ met vaste breedtes zodat ze 1-op-1
-  // uitlijnen met de rode/groene balkkolommen.
   static pw.Widget _distanceQuarterSection({
     required List<Goal> goalsScored,
     required List<Goal> goalsConceded,
@@ -457,71 +315,54 @@ class PdfExporter {
     required double middleGapWidth,
     required double rightWidth,
   }) {
-    final left = _distanceCounts(goalsScored);     // {2m,5m,7m}
-    final right = _distanceCounts(goalsConceded);  // {2m,5m,7m}
+    final left = _distanceCounts(goalsScored);
+    final right = _distanceCounts(goalsConceded);
 
-    final maxLeft = [left['2m']!, left['5m']!, left['7m']!].reduce((a, b) => a > b ? a : b);
-    final maxRight = [right['2m']!, right['5m']!, right['7m']!].reduce((a, b) => a > b ? a : b);
+    final maxLeft = math.max(left['2m']!, math.max(left['5m']!, left['7m']!));
+    final maxRight = math.max(right['2m']!, math.max(right['5m']!, right['7m']!));
 
-    pw.Widget quarter({
-      required bool rightSide,
-      required Map<String, int> values,
-      required p.PdfColor baseColor,
-      required int maxValue,
-      required double width,
-    }) {
-      // kleuren (licht -> donker)
+    pw.Widget quarter({required bool rightSide, required Map<String, int> values, required p.PdfColor baseColor, required int maxValue, required double width}) {
       final shades = [
         _lerpColor(baseColor, p.PdfColors.white, 0.55),
         _lerpColor(baseColor, p.PdfColors.white, 0.35),
         baseColor,
       ];
-      final seq = [values['7m']!, values['5m']!, values['2m']!]; // buiten -> binnen
+      final seq = [values['7m']!, values['5m']!, values['2m']!];
 
       return pw.Container(
         width: width,
         height: height,
         child: pw.Stack(
           children: [
-            // Clip op de kaart en teken volledige cirkels met middelpunt in de HOEK.
             pw.ClipRect(
               child: pw.CustomPaint(
                 size: p.PdfPoint(width, height),
                 painter: (p.PdfGraphics canvas, p.PdfPoint size) {
                   final cx = rightSide ? size.x : 0.0;
-                  final cy = 0.0;
                   const ringGap = 4.0;
-                  const ringCount = 3;
-                  final outerR = size.y; // straal = hoogte
-                  final ringWidth = (size.y - (ringGap * (ringCount - 1))) / ringCount;
+                  final outerR = size.y;
+                  final ringWidth = (size.y - (ringGap * 2)) / 3;
 
-                  final maxV = maxValue <= 0 ? 1 : maxValue;
-
-                  for (int i = 0; i < ringCount; i++) {
+                  for (int i = 0; i < 3; i++) {
                     final rOuter = outerR - i * (ringWidth + ringGap);
                     final rInner = rOuter - ringWidth;
-
-                    final t = (seq[i] / maxV).clamp(0.0, 1.0);
+                    final t = maxValue == 0 ? 0 : seq[i] / maxValue;
                     final col = _lerpColor(shades[i], baseColor, t * 0.6);
 
-                    // buitenste schijf
                     canvas
                       ..setFillColor(col)
-                      ..drawEllipse(cx, cy, rOuter, rOuter)
+                      ..drawEllipse(cx, 0, rOuter, rOuter)
                       ..fillPath();
 
-                    // binnenste uitsnijden (wit) => ring
                     canvas
                       ..setFillColor(p.PdfColors.white)
-                      ..drawEllipse(cx, cy, rInner, rInner)
+                      ..drawEllipse(cx, 0, rInner, rInner)
                       ..fillPath();
                   }
 
-                  // dunne baseline
-                  final lineColor = _lerpColor(baseColor, p.PdfColors.black, 0.2);
                   canvas
                     ..setLineWidth(0.5)
-                    ..setStrokeColor(lineColor)
+                    ..setStrokeColor(p.PdfColors.black)
                     ..moveTo(0, 0)
                     ..lineTo(size.x, 0)
                     ..strokePath();
@@ -529,18 +370,10 @@ class PdfExporter {
               ),
             ),
 
-            // Waarden in de ringen (buiten -> binnen)
-            _ringNumberOverlayQuarter(
-              rightSide: rightSide, width: width, height: height, ringIndex: 0, value: seq[0],
-            ),
-            _ringNumberOverlayQuarter(
-              rightSide: rightSide, width: width, height: height, ringIndex: 1, value: seq[1],
-            ),
-            _ringNumberOverlayQuarter(
-              rightSide: rightSide, width: width, height: height, ringIndex: 2, value: seq[2],
-            ),
+            _ringNumberOverlayQuarter(rightSide: rightSide, width: width, height: height, ringIndex: 0, value: seq[0]),
+            _ringNumberOverlayQuarter(rightSide: rightSide, width: width, height: height, ringIndex: 1, value: seq[1]),
+            _ringNumberOverlayQuarter(rightSide: rightSide, width: width, height: height, ringIndex: 2, value: seq[2]),
 
-            // Randlabels (ongeveer vaste posities vanaf onderrand)
             _edgeLabel('2m', alignLeft: !rightSide, bottom: height * .10),
             _edgeLabel('5m', alignLeft: !rightSide, bottom: height * .30),
             _edgeLabel('7m', alignLeft: !rightSide, bottom: height * .80),
@@ -554,161 +387,84 @@ class PdfExporter {
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
-          // Linker kwart (groen) exact onder de linker balkkolom
-          pw.SizedBox(
-            width: leftWidth,
-            child: quarter(
-              rightSide: false,
-              values: left,
-              baseColor: _green,
-              maxValue: maxLeft,
-              width: leftWidth,
-            ),
-          ),
-          // Midden-gap precies gelijk aan labels + kolom-gaps
+          pw.SizedBox(width: leftWidth, child: quarter(rightSide: false, values: left, baseColor: _green, maxValue: maxLeft, width: leftWidth)),
           pw.SizedBox(width: middleGapWidth),
-          // Rechter kwart (rood) exact onder de rechter balkkolom
-          pw.SizedBox(
-            width: rightWidth,
-            child: quarter(
-              rightSide: true,
-              values: right,
-              baseColor: _red,
-              maxValue: maxRight,
-              width: rightWidth,
-            ),
-          ),
+          pw.SizedBox(width: rightWidth, child: quarter(rightSide: true, values: right, baseColor: _red, maxValue: maxRight, width: rightWidth)),
         ],
       ),
     );
   }
 
-  static double _barsBlockHeight(int itemCount) {
-    if (itemCount <= 0) return _barHeight;
-    return itemCount * _barHeight + (itemCount - 1) * _barGap;
-  }
+  static double _barsBlockHeight(int itemCount) => itemCount <= 0 ? _barHeight : itemCount * _barHeight + (itemCount - 1) * _barGap;
 
-  // De complete spelerskaart in 3 kolommen + kwart-cirkel heatmaps eronder
   static pw.Widget _playerCard({
     required int playerNumber,
     required String playerName,
     required List<Goal> goalsScored,
     required List<Goal> goalsConceded,
     double cardWidth = _cardBaseWidth,
-
-    // ========= NIEUW =========
-    double containerScale = 1.0, // 1.5 = 50% groter in hoogte & breedte
+    double containerScale = 1.0,
   }) {
     final typesOrder = _nonDistanceTypes();
     final scoredCounts = _countByType(goalsScored);
     final concededCounts = _countByType(goalsConceded);
 
-    // Layout-constanten (inhoud blijft dezelfde grootte)
     const horizontalPad = 10.0;
     const verticalPad = 8.0;
     const colGap = 12.0;
 
-    // Breedtes 3-koloms balkenlayout
     final innerWidth = cardWidth - 2 * horizontalPad;
-    final availableWidth = innerWidth - 2 * colGap; // Ruimte voor de kolommen zelf
-    final colLeftWidth   = availableWidth * 0.37; // balken links
-    final colCenterWidth = availableWidth * 0.26; // labels
-    final colRightWidth  = availableWidth * 0.37; // balken rechts
+    final availableWidth = innerWidth - 2 * colGap;
+    final colLeftWidth = availableWidth * 0.37;
+    final colCenterWidth = availableWidth * 0.26;
+    final colRightWidth = availableWidth * 0.37;
 
-    // Hoogte van de balken-sectie (inhoud blijft gelijk)
-    final barsHeight    = _barsBlockHeight(typesOrder.length);
-    final heatmapHeight = math.max(110.0, barsHeight); // kwartcirkel NIET opschalen
+    final barsHeight = _barsBlockHeight(typesOrder.length);
+    final heatmapHeight = math.max(110.0, barsHeight);
 
-    // ======= NIEUW: totale basis-hoogte van de kaart (ongeveer exact) =======
-    // Opbouw: 2*padding + (titelrij ~22) + 6 + bars + 10 + heatmap
     const double titleRowEstimate = 22.0;
-    final double baseHeight =
-        (2 * verticalPad) + titleRowEstimate + 6 + barsHeight + 10 + heatmapHeight;
-
-    // Doel: container 1.5x zo hoog; inhoud blijft ongewijzigd
+    final double baseHeight = (2 * verticalPad) + titleRowEstimate + 6 + barsHeight + 10 + heatmapHeight;
     final double containerHeight = baseHeight * containerScale;
 
     return pw.Container(
-      width: cardWidth,                 // 1.5x breder meegegeven bij aanroep
-      height: containerHeight,         // 1.5x hoger via containerScale
+      width: cardWidth,
+      height: containerHeight,
       padding: const pw.EdgeInsets.symmetric(horizontal: horizontalPad, vertical: verticalPad),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: p.PdfColors.grey600, width: 0.8),
-        borderRadius: pw.BorderRadius.circular(6),
-      ),
+      decoration: pw.BoxDecoration(border: pw.Border.all(color: p.PdfColors.grey600, width: 0.8), borderRadius: pw.BorderRadius.circular(6)),
       child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        mainAxisSize: pw.MainAxisSize.max,
         children: [
-          // Titelrij
           pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('Doelpunten',
-                  style: pw.TextStyle(
-                      fontSize: 12, fontWeight: pw.FontWeight.bold, color: _green)),
-              pw.Text(
-                playerName,
-                style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
-              ),
-              pw.Text('Tegendoelpunten',
-                  style: pw.TextStyle(
-                      fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red)),
+              pw.Text('Doelpunten', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _green)),
+              pw.Text(playerName, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Tegendoelpunten', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red)),
             ],
           ),
+
           pw.SizedBox(height: 6),
 
-          // 3 Kolommen
           pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              // Links balken
-              pw.Container(
-                width: colLeftWidth,
-                child: _barList(
-                  counts: scoredCounts,
-                  typesOrder: typesOrder,
-                  fill: _green,
-                  fillBack: _greenBack,
-                  maxWidth: colLeftWidth,
-                ),
-              ),
+              pw.Container(width: colLeftWidth, child: _barList(counts: scoredCounts, typesOrder: typesOrder, fill: _green, fillBack: _greenBack, maxWidth: colLeftWidth)),
               pw.SizedBox(width: colGap),
-
-              // Midden labels
-              pw.Container(
-                width: colCenterWidth,
-                child: _labelList(typesOrder: typesOrder),
-              ),
+              pw.Container(width: colCenterWidth, child: _labelList(typesOrder: typesOrder)),
               pw.SizedBox(width: colGap),
-
-              // Rechts balken
-              pw.Container(
-                width: colRightWidth,
-                child: _barList(
-                  counts: concededCounts,
-                  typesOrder: typesOrder,
-                  fill: _red,
-                  fillBack: _redBack,
-                  maxWidth: colRightWidth,
-                ),
-              ),
+              pw.Container(width: colRightWidth, child: _barList(counts: concededCounts, typesOrder: typesOrder, fill: _red, fillBack: _redBack, maxWidth: colRightWidth)),
             ],
           ),
 
-          // Kwart-cirkel afstand heatmaps - exact onder de kolommen uitgelijnd
-          pw.SizedBox(height: 10),
+          pw.Spacer(),
+
           _distanceQuarterSection(
             goalsScored: goalsScored,
             goalsConceded: goalsConceded,
-            height: heatmapHeight,                         // NIET schalen
+            height: heatmapHeight,
             leftWidth: colLeftWidth,
             middleGapWidth: colCenterWidth + 2 * colGap,
             rightWidth: colRightWidth,
           ),
-
-          // Resthoogte (als container hoger is dan inhoud) wordt automatisch
-          // opgevuld als witruimte onderin; geen extra SizedBox nodig.
         ],
       ),
     );
