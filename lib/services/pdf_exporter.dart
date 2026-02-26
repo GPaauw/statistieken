@@ -1,6 +1,6 @@
 // lib/services/pdf_exporter.dart
-// Full adjusted file with quarter-circles fixed to bottom
-// and container scaling 1.5x (width & height), heatmap unchanged.
+// Quarter-circles pinned to bottom, container 1.5x scaled (width & height),
+// heatmap unchanged in scale, and label gutter so 7m/5m/2m can sit outside the arcs.
 
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -14,6 +14,7 @@ import '../controllers/match_controller.dart';
 import '../models/goal.dart';
 
 class PdfExporter {
+  // Container scaling (frame 1.5x larger, content keeps size)
   static const double _containerScale = 1.5;
   static const double _cardBaseWidth = 360.0;
 
@@ -147,7 +148,7 @@ class PdfExporter {
     await Printing.sharePdf(bytes: bytes, filename: 'wedstrijdverslag_$formattedDate.pdf');
   }
 
-  // --- Helpers for bars, labels, distances, heatmaps ---
+  // ------------- Bars, labels, and counts -------------
   static const _barHeight = 16.0;
   static const _barRadius = 4.0;
   static const _barGap = 8.0;
@@ -201,8 +202,10 @@ class PdfExporter {
             ),
           ),
           pw.Center(
-            child: pw.Text(value.toString(),
-              style: pw.TextStyle(color: p.PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 12)),
+            child: pw.Text(
+              value.toString(),
+              style: pw.TextStyle(color: p.PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 12),
+            ),
           ),
         ],
       ),
@@ -225,7 +228,7 @@ class PdfExporter {
         for (int i = 0; i < typesOrder.length; i++) ...[
           _barRow(value: values[i], maxValue: maxValue, maxWidth: maxWidth, fill: fill, fillBack: fillBack),
           if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
-        ]
+        ],
       ],
     );
   }
@@ -236,12 +239,13 @@ class PdfExporter {
       children: [
         for (int i = 0; i < typesOrder.length; i++) ...[
           pw.Text(typesOrder[i].label, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-          if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap)
-        ]
+          if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
+        ],
       ],
     );
   }
 
+  // ------------- Distances and heatmap helpers -------------
   static Map<String, int> _distanceCounts(List<Goal> goals) {
     int c2 = 0, c5 = 0, c7 = 0;
     for (final g in goals) {
@@ -262,12 +266,14 @@ class PdfExporter {
     );
   }
 
+  // Ring overlay numbers (with optional dx offset when drawing area is shifted)
   static pw.Widget _ringNumberOverlayQuarter({
     required bool rightSide,
     required double width,
     required double height,
     required int ringIndex,
     required int value,
+    double dx = 0, // horizontal shift of drawing origin
   }) {
     const ringGap = 4.0;
     const ringCount = 3;
@@ -282,7 +288,7 @@ class PdfExporter {
     final tx = cx + rMid * math.cos(angle);
     final ty = cy + rMid * math.sin(angle);
 
-    final left = tx - 7;
+    final left = dx + tx - 7; // apply dx so numbers align after shifting draw area
     final top = height - ty - 7;
 
     return pw.Positioned(
@@ -292,18 +298,11 @@ class PdfExporter {
         width: 14,
         height: 14,
         alignment: pw.Alignment.center,
-        child: pw.Text(value.toString(),
-            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: p.PdfColors.white)),
+        child: pw.Text(
+          value.toString(),
+          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: p.PdfColors.white),
+        ),
       ),
-    );
-  }
-
-  static pw.Widget _edgeLabel(String text, {required bool alignLeft, required double bottom}) {
-    return pw.Positioned(
-      left: alignLeft ? 0 : null,
-      right: alignLeft ? null : 0,
-      bottom: bottom,
-      child: pw.Text(text, style: const pw.TextStyle(fontSize: 9, color: p.PdfColors.black)),
     );
   }
 
@@ -321,7 +320,15 @@ class PdfExporter {
     final maxLeft = math.max(left['2m']!, math.max(left['5m']!, left['7m']!));
     final maxRight = math.max(right['2m']!, math.max(right['5m']!, right['7m']!));
 
-    pw.Widget quarter({required bool rightSide, required Map<String, int> values, required p.PdfColor baseColor, required int maxValue, required double width}) {
+    const double labelGutter = 18.0; // reserved space for labels outside the arc
+
+    pw.Widget quarter({
+      required bool rightSide,
+      required Map<String, int> values,
+      required p.PdfColor baseColor,
+      required int maxValue,
+      required double width,
+    }) {
       final shades = [
         _lerpColor(baseColor, p.PdfColors.white, 0.55),
         _lerpColor(baseColor, p.PdfColors.white, 0.35),
@@ -329,54 +336,73 @@ class PdfExporter {
       ];
       final seq = [values['7m']!, values['5m']!, values['2m']!];
 
+      final double drawDx = rightSide ? 0.0 : labelGutter; // shift left quarter rightwards
+      final double drawW = width - labelGutter;            // effective drawing width
+
       return pw.Container(
         width: width,
         height: height,
         child: pw.Stack(
           children: [
-            pw.ClipRect(
-              child: pw.CustomPaint(
-                size: p.PdfPoint(width, height),
-                painter: (p.PdfGraphics canvas, p.PdfPoint size) {
-                  final cx = rightSide ? size.x : 0.0;
-                  const ringGap = 4.0;
-                  final outerR = size.y;
-                  final ringWidth = (size.y - (ringGap * 2)) / 3;
+            // Drawing area (shifted when left quarter)
+            pw.Positioned(
+              left: drawDx,
+              right: rightSide ? labelGutter : 0,
+              top: 0,
+              bottom: 0,
+              child: pw.ClipRect(
+                child: pw.CustomPaint(
+                  size: p.PdfPoint(drawW, height),
+                  painter: (p.PdfGraphics canvas, p.PdfPoint size) {
+                    final cx = rightSide ? size.x : 0.0;
+                    const ringGap = 4.0;
+                    final outerR = size.y;
+                    final ringWidth = (size.y - (ringGap * 2)) / 3;
 
-                  for (int i = 0; i < 3; i++) {
-                    final rOuter = outerR - i * (ringWidth + ringGap);
-                    final rInner = rOuter - ringWidth;
-                    final t = maxValue == 0 ? 0 : seq[i] / maxValue;
-                    final col = _lerpColor(shades[i], baseColor, t * 0.6);
+                    for (int i = 0; i < 3; i++) {
+                      final rOuter = outerR - i * (ringWidth + ringGap);
+                      final rInner = rOuter - ringWidth;
+                      final t = maxValue == 0 ? 0 : seq[i] / maxValue;
+                      final col = _lerpColor(shades[i], baseColor, t * 0.6);
 
+                      canvas
+                        ..setFillColor(col)
+                        ..drawEllipse(cx, 0, rOuter, rOuter)
+                        ..fillPath();
+
+                      canvas
+                        ..setFillColor(p.PdfColors.white)
+                        ..drawEllipse(cx, 0, rInner, rInner)
+                        ..fillPath();
+                    }
+
+                    // Baseline across effective drawing area
                     canvas
-                      ..setFillColor(col)
-                      ..drawEllipse(cx, 0, rOuter, rOuter)
-                      ..fillPath();
-
-                    canvas
-                      ..setFillColor(p.PdfColors.white)
-                      ..drawEllipse(cx, 0, rInner, rInner)
-                      ..fillPath();
-                  }
-
-                  canvas
-                    ..setLineWidth(0.5)
-                    ..setStrokeColor(p.PdfColors.black)
-                    ..moveTo(0, 0)
-                    ..lineTo(size.x, 0)
-                    ..strokePath();
-                },
+                      ..setLineWidth(0.5)
+                      ..setStrokeColor(p.PdfColors.black)
+                      ..moveTo(0, 0)
+                      ..lineTo(size.x, 0)
+                      ..strokePath();
+                  },
+                ),
               ),
             ),
 
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: width, height: height, ringIndex: 0, value: seq[0]),
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: width, height: height, ringIndex: 1, value: seq[1]),
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: width, height: height, ringIndex: 2, value: seq[2]),
+            // Numbers on rings (respect drawDx)
+            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 0, value: seq[0], dx: drawDx),
+            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 1, value: seq[1], dx: drawDx),
+            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 2, value: seq[2], dx: drawDx),
 
-            _edgeLabel('2m', alignLeft: !rightSide, bottom: height * .10),
-            _edgeLabel('5m', alignLeft: !rightSide, bottom: height * .30),
-            _edgeLabel('7m', alignLeft: !rightSide, bottom: height * .80),
+            // Labels in the gutter (outside the arc)
+            if (!rightSide) ...[
+              pw.Positioned(left: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: 0, bottom: height * .30, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
+            ] else ...[
+              pw.Positioned(right: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: 0, bottom: height * .30, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
+            ],
           ],
         ),
       );
@@ -387,16 +413,24 @@ class PdfExporter {
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
-          pw.SizedBox(width: leftWidth, child: quarter(rightSide: false, values: left, baseColor: _green, maxValue: maxLeft, width: leftWidth)),
+          pw.SizedBox(
+            width: leftWidth,
+            child: quarter(rightSide: false, values: left, baseColor: _green, maxValue: maxLeft, width: leftWidth),
+          ),
           pw.SizedBox(width: middleGapWidth),
-          pw.SizedBox(width: rightWidth, child: quarter(rightSide: true, values: right, baseColor: _red, maxValue: maxRight, width: rightWidth)),
+          pw.SizedBox(
+            width: rightWidth,
+            child: quarter(rightSide: true, values: right, baseColor: _red, maxValue: maxRight, width: rightWidth),
+          ),
         ],
       ),
     );
   }
 
-  static double _barsBlockHeight(int itemCount) => itemCount <= 0 ? _barHeight : itemCount * _barHeight + (itemCount - 1) * _barGap;
+  static double _barsBlockHeight(int itemCount) =>
+      itemCount <= 0 ? _barHeight : itemCount * _barHeight + (itemCount - 1) * _barGap;
 
+  // Player card (container scaled; heatmap not scaled; quarter-circles pinned to bottom)
   static pw.Widget _playerCard({
     required int playerNumber,
     required String playerName,
@@ -420,7 +454,7 @@ class PdfExporter {
     final colRightWidth = availableWidth * 0.37;
 
     final barsHeight = _barsBlockHeight(typesOrder.length);
-    final heatmapHeight = math.max(110.0, barsHeight);
+    final heatmapHeight = math.max(150.0, barsHeight); // enlarge a bit; not scaled with container
 
     const double titleRowEstimate = 22.0;
     final double baseHeight = (2 * verticalPad) + titleRowEstimate + 6 + barsHeight + 10 + heatmapHeight;
@@ -430,7 +464,10 @@ class PdfExporter {
       width: cardWidth,
       height: containerHeight,
       padding: const pw.EdgeInsets.symmetric(horizontal: horizontalPad, vertical: verticalPad),
-      decoration: pw.BoxDecoration(border: pw.Border.all(color: p.PdfColors.grey600, width: 0.8), borderRadius: pw.BorderRadius.circular(6)),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: p.PdfColors.grey600, width: 0.8),
+        borderRadius: pw.BorderRadius.circular(6),
+      ),
       child: pw.Column(
         mainAxisSize: pw.MainAxisSize.max,
         children: [
@@ -442,7 +479,6 @@ class PdfExporter {
               pw.Text('Tegendoelpunten', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red)),
             ],
           ),
-
           pw.SizedBox(height: 6),
 
           pw.Row(
@@ -455,6 +491,7 @@ class PdfExporter {
             ],
           ),
 
+          // push quarter-circles to the bottom of the card
           pw.Spacer(),
 
           _distanceQuarterSection(
