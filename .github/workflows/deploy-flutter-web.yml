@@ -29,11 +29,11 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      # Belangrijk: correcte base-href voor GitHub Pages
+      # Belangrijk: juiste base-href voor GitHub Pages
       - name: Build Flutter Web (release)
         run: flutter build web --release --base-href "/statistieken/"
 
-      # 404 fallback -> serve index.html voor alle routes
+      # 404 fallback -> alle routes naar index.html
       - name: Add 404 fallback
         run: cp build/web/index.html build/web/404.html
 
@@ -45,6 +45,11 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
+    # DIT WAS WAT ONTBRAK:
+    environment:
+      name: github-pages
+
     steps:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
