@@ -395,12 +395,12 @@ class PdfExporter {
 
             // Labels in the gutter (outside the arc)
             if (!rightSide) ...[
-              pw.Positioned(left: 0, bottom: height * .20, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(left: 0, bottom: height * .40, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: 0, bottom: height * .50, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
               pw.Positioned(left: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
             ] else ...[
-              pw.Positioned(right: 0, bottom: height * .20, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(right: 0, bottom: height * .40, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: 0, bottom: height * .50, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
               pw.Positioned(right: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
             ],
           ],
