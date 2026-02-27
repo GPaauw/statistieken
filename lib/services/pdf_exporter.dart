@@ -512,7 +512,7 @@ class PdfExporter {
             goalsConceded: goalsConceded,
             height: heatmapHeight,
             leftWidth: colLeftWidth,
-            middleGapWidth: 0,
+            middleGapWidth: 18.0,
             rightWidth: colRightWidth,
           ),
         ],
