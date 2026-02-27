@@ -15,8 +15,8 @@ class PdfExporter {
   static const double _cardBaseWidth = 360.0;
 
   // -------- Shared tuning constants --------
-  static const double _ringGap = 4.0;        // ruimte tussen de 3 ringen
-  static const double _outsideGutter = 14.0; // ruimte tussen boog en buitenrand voor 2m/5m/7m labels
+  static const double _ringGap = 0.0;        // ruimte tussen de 3 ringen
+  static const double _outsideGutter = 20.0; // ruimte tussen boog en buitenrand voor 2m/5m/7m labels
 
   static Future<Uint8List> buildReport({
     required MatchController c,
@@ -402,13 +402,13 @@ class PdfExporter {
 
             // 2m/5m/7m labels in de buiten-gutter, goed zichtbaar
             if (!rightSide) ...[
-              pw.Positioned(left: 2, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(left: 2, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(left: 2, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: 2, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12))),
+              pw.Positioned(left: 2, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12))),
+              pw.Positioned(left: 2, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12))),
             ] else ...[
-              pw.Positioned(right: 2, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(right: 2, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(right: 2, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: 2, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12))),
+              pw.Positioned(right: 2, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12))),
+              pw.Positioned(right: 2, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12))),
             ],
           ],
         ),
