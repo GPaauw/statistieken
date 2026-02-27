@@ -16,7 +16,7 @@ class PdfExporter {
 
   // -------- Shared tuning constants --------
   static const double _ringGap = 0.0;        // ruimte tussen de 3 ringen
-  static const double _outsideGutter = 20.0; // ruimte tussen boog en buitenrand voor 2m/5m/7m labels
+  static const double _outsideGutter = 22.0; // ruimte tussen boog en buitenrand voor 2m/5m/7m labels
 
   static Future<Uint8List> buildReport({
     required MatchController c,
