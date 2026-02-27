@@ -271,7 +271,7 @@ class PdfExporter {
     required int value,
     double dx = 0, // horizontal shift of drawing origin
   }) {
-    const ringGap = 4.0;
+    const ringGap = 0.0;
     const ringCount = 3;
     final outerR = height;
     final ringWidth = (height - (ringGap * (ringCount - 1))) / ringCount;
@@ -461,11 +461,35 @@ class PdfExporter {
         mainAxisSize: pw.MainAxisSize.max,
         children: [
           pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('Doelpunten', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _green)),
-              pw.Text(playerName, style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-              pw.Text('Tegendoelpunten', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red)),
+              pw.Expanded(
+                child: pw.Align(
+                  alignment: pw.Alignment.centerLeft,
+                  child: pw.Text(
+                    'Doelpunten',
+                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _green),
+                  ),
+                ),
+              ),
+
+              pw.Expanded(
+                child: pw.Center(
+                  child: pw.Text(
+                    playerName,
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+                  ),
+                ),
+              ),
+
+              pw.Expanded(
+                child: pw.Align(
+                  alignment: pw.Alignment.centerRight,
+                  child: pw.Text(
+                    'Tegendoelpunten',
+                      style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red),
+                  ),
+                ),
+              ),
             ],
           ),
           pw.SizedBox(height: 6),
