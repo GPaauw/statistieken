@@ -231,7 +231,7 @@ class PdfExporter {
 
   static pw.Widget _labelList({required List<GoalType> typesOrder}) {
     return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      crossAxisAlignment: pw.CrossAxisAlignment.center,
       children: [
         for (int i = 0; i < typesOrder.length; i++) ...[
           pw.Text(typesOrder[i].label, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
@@ -316,7 +316,7 @@ class PdfExporter {
     final maxLeft = math.max(left['2m']!, math.max(left['5m']!, left['7m']!));
     final maxRight = math.max(right['2m']!, math.max(right['5m']!, right['7m']!));
 
-    const double labelGutter = 18.0; // reserved space for labels outside the arc
+    const double labelGutter = 0.0; // reserved space for labels outside the arc
 
     pw.Widget quarter({
       required bool rightSide,
@@ -512,7 +512,7 @@ class PdfExporter {
             goalsConceded: goalsConceded,
             height: heatmapHeight,
             leftWidth: colLeftWidth,
-            middleGapWidth: colCenterWidth + 2 * colGap,
+            middleGapWidth: 0,
             rightWidth: colRightWidth,
           ),
         ],
