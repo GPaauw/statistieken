@@ -1,7 +1,3 @@
-// lib/services/pdf_exporter.dart
-// Quarter-circles pinned to bottom, container 1.5x scaled (width & height),
-// heatmap unchanged in scale, and label gutter so 7m/5m/2m can sit outside the arcs.
-
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -376,13 +372,6 @@ class PdfExporter {
                         ..fillPath();
                     }
 
-                    // Baseline across effective drawing area
-                    canvas
-                      ..setLineWidth(0.5)
-                      ..setStrokeColor(p.PdfColors.black)
-                      ..moveTo(0, 0)
-                      ..lineTo(size.x, 0)
-                      ..strokePath();
                   },
                 ),
               ),
