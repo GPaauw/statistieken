@@ -14,6 +14,10 @@ class PdfExporter {
   static const double _containerScale = 1.5;
   static const double _cardBaseWidth = 360.0;
 
+  // -------- Shared layout/tuning constants --------
+  static const double _ringGap = 4.0;       // afstand tussen de 3 ringen
+  static const double _labelOutside = 12.0; // hoe ver 2m/5m/7m-buiten de boog staat (negatieve offset)
+
   static Future<Uint8List> buildReport({
     required MatchController c,
     String homeTeamName = "KV Flamingo's",
@@ -76,7 +80,11 @@ class PdfExporter {
               final rows = <List<String>>[];
               int home = 0, away = 0;
               for (final g in c.goals) {
-                if (g.team == Team.home) home++; else away++;
+                if (g.team == Team.home) {
+                  home++;
+                } else {
+                  away++;
+                }
                 rows.add([
                   fmtTime(g.secondStamp),
                   g.team == Team.home ? homeTeamName : awayTeamName,
@@ -161,15 +169,21 @@ class PdfExporter {
 
   static List<GoalType> _nonDistanceTypes() {
     final list = <GoalType>[];
-    for (final t in GoalType.values) if (!_isDistanceType(t)) list.add(t);
+    for (final t in GoalType.values) {
+      if (!_isDistanceType(t)) list.add(t);
+    }
     list.sort((a, b) => a.label.compareTo(b.label));
     return list;
   }
 
   static Map<GoalType, int> _countByType(Iterable<Goal> goals) {
     final map = <GoalType, int>{};
-    for (final t in GoalType.values) map[t] = 0;
-    for (final g in goals) map[g.type] = (map[g.type] ?? 0) + 1;
+    for (final t in GoalType.values) {
+      map[t] = 0;
+    }
+    for (final g in goals) {
+      map[g.type] = (map[g.type] ?? 0) + 1;
+    }
     return map;
   }
 
@@ -231,10 +245,13 @@ class PdfExporter {
 
   static pw.Widget _labelList({required List<GoalType> typesOrder}) {
     return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.center,
+      crossAxisAlignment: pw.CrossAxisAlignment.center, // gecentreerd binnen de kolom
       children: [
         for (int i = 0; i < typesOrder.length; i++) ...[
-          pw.Text(typesOrder[i].label, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            typesOrder[i].label,
+            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          ),
           if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
         ],
       ],
@@ -271,8 +288,8 @@ class PdfExporter {
     required int value,
     double dx = 0, // horizontal shift of drawing origin
   }) {
-    const ringGap = 0.0;
     const ringCount = 3;
+    const ringGap = _ringGap; // gebruik dezelfde gap als in de painter
     final outerR = height;
     final ringWidth = (height - (ringGap * (ringCount - 1))) / ringCount;
     final rOuter = outerR - ringIndex * (ringWidth + ringGap);
@@ -307,7 +324,7 @@ class PdfExporter {
     required List<Goal> goalsConceded,
     required double height,
     required double leftWidth,
-    required double middleGapWidth,
+    required double middleGapWidth, // niet meer gebruikt maar gelaten voor API-compat
     required double rightWidth,
   }) {
     final left = _distanceCounts(goalsScored);
@@ -316,7 +333,7 @@ class PdfExporter {
     final maxLeft = math.max(left['2m']!, math.max(left['5m']!, left['7m']!));
     final maxRight = math.max(right['2m']!, math.max(right['5m']!, right['7m']!));
 
-    const double labelGutter = 0.0; // reserved space for labels outside the arc
+    const double labelGutter = 0.0; // arcs zelf flush tekenen (labels zetten we buiten de Container)
 
     pw.Widget quarter({
       required bool rightSide,
@@ -332,15 +349,15 @@ class PdfExporter {
       ];
       final seq = [values['7m']!, values['5m']!, values['2m']!];
 
-      final double drawDx = rightSide ? 0.0 : labelGutter; // shift left quarter rightwards
-      final double drawW = width - labelGutter;            // effective drawing width
+      final double drawDx = rightSide ? 0.0 : labelGutter; // met 0.0 blijven arcs tegen rand
+      final double drawW = width - labelGutter;            // effectieve tekenbreedte
 
       return pw.Container(
         width: width,
         height: height,
         child: pw.Stack(
           children: [
-            // Drawing area (shifted when left quarter)
+            // Tekengebied (alleen de arcs)
             pw.Positioned(
               left: drawDx,
               right: rightSide ? labelGutter : 0,
@@ -351,7 +368,7 @@ class PdfExporter {
                   size: p.PdfPoint(drawW, height),
                   painter: (p.PdfGraphics canvas, p.PdfPoint size) {
                     final cx = rightSide ? size.x : 0.0;
-                    const ringGap = 4.0;
+                    const ringGap = _ringGap;
                     final outerR = size.y;
                     final ringWidth = (size.y - (ringGap * 2)) / 3;
 
@@ -371,26 +388,28 @@ class PdfExporter {
                         ..drawEllipse(cx, 0, rInner, rInner)
                         ..fillPath();
                     }
-
                   },
                 ),
               ),
             ),
 
             // Numbers on rings (respect drawDx)
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 0, value: seq[0], dx: drawDx),
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 1, value: seq[1], dx: drawDx),
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 2, value: seq[2], dx: drawDx),
+            _ringNumberOverlayQuarter(
+              rightSide: rightSide, width: drawW, height: height, ringIndex: 0, value: seq[0], dx: drawDx),
+            _ringNumberOverlayQuarter(
+              rightSide: rightSide, width: drawW, height: height, ringIndex: 1, value: seq[1], dx: drawDx),
+            _ringNumberOverlayQuarter(
+              rightSide: rightSide, width: drawW, height: height, ringIndex: 2, value: seq[2], dx: drawDx),
 
-            // Labels in the gutter (outside the arc)
+            // 2m/5m/7m labels BUITEN de boog (negatieve offset)
             if (!rightSide) ...[
-              pw.Positioned(left: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(left: 0, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(left: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: -_labelOutside, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: -_labelOutside, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(left: -_labelOutside, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
             ] else ...[
-              pw.Positioned(right: 0, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(right: 0, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
-              pw.Positioned(right: 0, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: -_labelOutside, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: -_labelOutside, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 9))),
+              pw.Positioned(right: -_labelOutside, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 9))),
             ],
           ],
         ),
@@ -400,13 +419,14 @@ class PdfExporter {
     return pw.SizedBox(
       height: height,
       child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, // duwt links/rechts tegen de zijkanten
         crossAxisAlignment: pw.CrossAxisAlignment.end,
         children: [
           pw.SizedBox(
             width: leftWidth,
             child: quarter(rightSide: false, values: left, baseColor: _green, maxValue: maxLeft, width: leftWidth),
           ),
-          pw.SizedBox(width: middleGapWidth),
+          // Géén expliciete middle gap widget meer (ruimte komt vanzelf uit spaceBetween)
           pw.SizedBox(
             width: rightWidth,
             child: quarter(rightSide: true, values: right, baseColor: _red, maxValue: maxRight, width: rightWidth),
@@ -460,6 +480,7 @@ class PdfExporter {
       child: pw.Column(
         mainAxisSize: pw.MainAxisSize.max,
         children: [
+          // Titelrij: links/center/rechts
           pw.Row(
             children: [
               pw.Expanded(
@@ -471,7 +492,6 @@ class PdfExporter {
                   ),
                 ),
               ),
-
               pw.Expanded(
                 child: pw.Center(
                   child: pw.Text(
@@ -480,13 +500,12 @@ class PdfExporter {
                   ),
                 ),
               ),
-
               pw.Expanded(
                 child: pw.Align(
                   alignment: pw.Alignment.centerRight,
                   child: pw.Text(
                     'Tegendoelpunten',
-                      style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red),
+                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red),
                   ),
                 ),
               ),
@@ -494,13 +513,35 @@ class PdfExporter {
           ),
           pw.SizedBox(height: 6),
 
+          // Bars + labels (middelste kolom labels blijven gecentreerd)
           pw.Row(
             children: [
-              pw.Container(width: colLeftWidth, child: _barList(counts: scoredCounts, typesOrder: typesOrder, fill: _green, fillBack: _greenBack, maxWidth: colLeftWidth)),
+              pw.Container(
+                width: colLeftWidth,
+                child: _barList(
+                  counts: scoredCounts,
+                  typesOrder: _nonDistanceTypes(),
+                  fill: _green,
+                  fillBack: _greenBack,
+                  maxWidth: colLeftWidth,
+                ),
+              ),
               pw.SizedBox(width: colGap),
-              pw.Container(width: colCenterWidth, child: _labelList(typesOrder: typesOrder)),
+              pw.Container(
+                width: colCenterWidth,
+                child: _labelList(typesOrder: typesOrder),
+              ),
               pw.SizedBox(width: colGap),
-              pw.Container(width: colRightWidth, child: _barList(counts: concededCounts, typesOrder: typesOrder, fill: _red, fillBack: _redBack, maxWidth: colRightWidth)),
+              pw.Container(
+                width: colRightWidth,
+                child: _barList(
+                  counts: concededCounts,
+                  typesOrder: _nonDistanceTypes(),
+                  fill: _red,
+                  fillBack: _redBack,
+                  maxWidth: colRightWidth,
+                ),
+              ),
             ],
           ),
 
@@ -512,7 +553,7 @@ class PdfExporter {
             goalsConceded: goalsConceded,
             height: heatmapHeight,
             leftWidth: colLeftWidth,
-            middleGapWidth: 18.0,
+            middleGapWidth: 0.0, // niet meer gebruikt; we spreiden via spaceBetween
             rightWidth: colRightWidth,
           ),
         ],
