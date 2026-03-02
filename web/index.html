@@ -35,9 +35,9 @@
 <body>
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(() => console.log("Service Worker registered"))
-        .catch(err => console.error("SW registration failed", err));
+      navigator.serviceWorker.register("/statistieken/service-worker.js")
+        .then(() => console.log("Service Worker geregistreerd"))
+        .catch(err => console.error("SW fout:", err));
     }
   </script>
   <script src="flutter_bootstrap.js" async></script>
