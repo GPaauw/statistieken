@@ -462,7 +462,7 @@ class PdfExporter {
     final colRightWidth = availableWidth * 0.37;
 
     final barsHeight = _barsBlockHeight(typesOrder.length);
-    final heatmapHeight = math.max(125.0, barsHeight); // enlarge a bit; not scaled with container
+    final heatmapHeight = math.max(110.0, barsHeight); // enlarge a bit; not scaled with container
 
     const double titleRowEstimate = 22.0;
     final double baseHeight = (2 * verticalPad) + titleRowEstimate + 6 + barsHeight + 10 + heatmapHeight;
