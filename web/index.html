@@ -34,10 +34,18 @@
 </head>
 <body>
   <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/statistieken/service-worker.js")
-        .then(() => console.log("Service Worker geregistreerd"))
-        .catch(err => console.error("SW fout:", err));
+    if ('serviceWorker' in navigator) {
+      const baseUri = '/statistieken/';
+
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register(baseUri + 'flutter_service_worker.js', {
+          scope: baseUri
+        }).then(reg => {
+          console.log("SW registered with scope:", baseUri);
+        }).catch(err => {
+          console.error("SW registration failed:", err);
+        });
+      });
     }
   </script>
   <script src="flutter_bootstrap.js" async></script>
