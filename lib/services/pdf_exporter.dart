@@ -15,8 +15,9 @@ class PdfExporter {
   static const double _cardBaseWidth = 360.0;
 
   // -------- Shared tuning constants --------
-  static const double _ringGap = 0.0;        // ruimte tussen de 3 ringen
-  static const double _outsideGutter = 22.0; // ruimte tussen boog en buitenrand voor 2m/5m/7m labels
+  static const double _ringGap = 0.0; // ruimte tussen de 3 ringen
+  static const double _outsideGutter =
+      22.0; // ruimte tussen boog en buitenrand voor 2m/5m/7m labels
 
   static Future<Uint8List> buildReport({
     required MatchController c,
@@ -34,19 +35,14 @@ class PdfExporter {
       return '${fmt2(m)}:${fmt2(s)}';
     }
 
-    String scorerName(Goal g) {
-      return g.team == Team.home
-          ? c.homePlayers.getName(g.playerNumber)
-          : c.awayPlayers.getName(g.playerNumber);
-    }
+    String homePlayerName(Goal g) => c.homePlayers.getName(g.playerNumber);
 
-    String? concededName(Goal g) {
-      final n = g.concededPlayerNumber;
-      if (n == null) return null;
-      return g.team == Team.home ? c.awayPlayers.getName(n) : c.homePlayers.getName(n);
-    }
+    String actionLabel(Goal g) => g.team == Team.home ? 'Doelpunt' : 'Tegen';
 
-    final headerStyle = pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold);
+    final headerStyle = pw.TextStyle(
+      fontSize: 22,
+      fontWeight: pw.FontWeight.bold,
+    );
     final h2 = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold);
     final cell = pw.TextStyle(fontSize: 11);
 
@@ -71,11 +67,14 @@ class PdfExporter {
           ),
           pw.SizedBox(height: 12),
 
-          pw.Table.fromTextArray(
-            headerStyle: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+          pw.TableHelper.fromTextArray(
+            headerStyle: pw.TextStyle(
+              fontSize: 12,
+              fontWeight: pw.FontWeight.bold,
+            ),
             headerDecoration: pw.BoxDecoration(color: p.PdfColors.grey300),
             cellStyle: cell,
-            headers: ['Tijd', 'Team', 'Speler', 'Type', 'Tegen', 'Stand'],
+            headers: ['Tijd', 'Team', 'Thuisspeler', 'Actie', 'Type', 'Stand'],
             data: () {
               final rows = <List<String>>[];
               int home = 0, away = 0;
@@ -88,9 +87,9 @@ class PdfExporter {
                 rows.add([
                   fmtTime(g.secondStamp),
                   g.team == Team.home ? homeTeamName : awayTeamName,
-                  scorerName(g),
+                  homePlayerName(g),
+                  actionLabel(g),
                   g.type.label,
-                  concededName(g) ?? '',
                   '$home - $away',
                 ]);
               }
@@ -99,10 +98,10 @@ class PdfExporter {
             border: null,
             columnWidths: {
               0: const pw.FlexColumnWidth(1),
-              1: const pw.FlexColumnWidth(2.4),
+              1: const pw.FlexColumnWidth(2.2),
               2: const pw.FlexColumnWidth(2.2),
-              3: const pw.FlexColumnWidth(2),
-              4: const pw.FlexColumnWidth(1.4),
+              3: const pw.FlexColumnWidth(1.4),
+              4: const pw.FlexColumnWidth(1.8),
               5: const pw.FlexColumnWidth(1),
             },
           ),
@@ -111,8 +110,11 @@ class PdfExporter {
           pw.Text('Samenvatting', style: h2),
           pw.SizedBox(height: 6),
           pw.Bullet(text: 'Totale speeltijd: ${fmtTime(c.elapsedSeconds)}'),
-          pw.Bullet(text: 'Totaal doelpunten: ${c.goals.length}'),
-          pw.Bullet(text: "KV Flamingo's: ${c.homeScore} | Tegenstanders: ${c.awayScore}"),
+          pw.Bullet(text: 'Totaal geregistreerde momenten: ${c.goals.length}'),
+          pw.Bullet(
+            text:
+                '$homeTeamName: ${c.homeScore} | $awayTeamName: ${c.awayScore}',
+          ),
 
           pw.SizedBox(height: 12),
           pw.Text("Spelerssamenvatting (KV Flamingo's)", style: h2),
@@ -126,8 +128,12 @@ class PdfExporter {
                 _playerCard(
                   playerNumber: n,
                   playerName: c.homePlayers.getName(n),
-                  goalsScored: c.goals.where((g) => g.team == Team.home && g.playerNumber == n).toList(),
-                  goalsConceded: c.goals.where((g) => g.concededPlayerNumber == n).toList(),
+                  goalsScored: c.goals
+                      .where((g) => g.team == Team.home && g.playerNumber == n)
+                      .toList(),
+                  goalsConceded: c.goals
+                      .where((g) => g.team == Team.away && g.playerNumber == n)
+                      .toList(),
                   cardWidth: _cardBaseWidth * _containerScale,
                   containerScale: _containerScale,
                 ),
@@ -148,8 +154,15 @@ class PdfExporter {
   }) async {
     final now = dateTime ?? DateTime.now();
     final formattedDate = DateFormat('dd-MM-yyyy').format(now);
-    final bytes = await buildReport(c: c, homeTeamName: homeTeamName, awayTeamName: awayTeamName);
-    await Printing.sharePdf(bytes: bytes, filename: 'wedstrijdverslag_$formattedDate.pdf');
+    final bytes = await buildReport(
+      c: c,
+      homeTeamName: homeTeamName,
+      awayTeamName: awayTeamName,
+    );
+    await Printing.sharePdf(
+      bytes: bytes,
+      filename: 'wedstrijdverslag_$formattedDate.pdf',
+    );
   }
 
   // ------------- Bars, labels, and counts -------------
@@ -199,7 +212,10 @@ class PdfExporter {
 
     return pw.Container(
       height: _barHeight,
-      decoration: pw.BoxDecoration(color: fillBack, borderRadius: pw.BorderRadius.circular(_barRadius)),
+      decoration: pw.BoxDecoration(
+        color: fillBack,
+        borderRadius: pw.BorderRadius.circular(_barRadius),
+      ),
       child: pw.Stack(
         children: [
           pw.Positioned.fill(
@@ -207,14 +223,21 @@ class PdfExporter {
               alignment: pw.Alignment.centerLeft,
               child: pw.Container(
                 width: barW,
-                decoration: pw.BoxDecoration(color: fill, borderRadius: pw.BorderRadius.circular(_barRadius)),
+                decoration: pw.BoxDecoration(
+                  color: fill,
+                  borderRadius: pw.BorderRadius.circular(_barRadius),
+                ),
               ),
             ),
           ),
           pw.Center(
             child: pw.Text(
               value.toString(),
-              style: pw.TextStyle(color: p.PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 12),
+              style: pw.TextStyle(
+                color: p.PdfColors.white,
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 12,
+              ),
             ),
           ),
         ],
@@ -236,7 +259,13 @@ class PdfExporter {
       crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
         for (int i = 0; i < typesOrder.length; i++) ...[
-          _barRow(value: values[i], maxValue: maxValue, maxWidth: maxWidth, fill: fill, fillBack: fillBack),
+          _barRow(
+            value: values[i],
+            maxValue: maxValue,
+            maxWidth: maxWidth,
+            fill: fill,
+            fillBack: fillBack,
+          ),
           if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
         ],
       ],
@@ -245,7 +274,8 @@ class PdfExporter {
 
   static pw.Widget _labelList({required List<GoalType> typesOrder}) {
     return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.center, // gecentreerd binnen de kolom
+      crossAxisAlignment:
+          pw.CrossAxisAlignment.center, // gecentreerd binnen de kolom
       children: [
         for (int i = 0; i < typesOrder.length; i++) ...[
           pw.Text(
@@ -301,7 +331,8 @@ class PdfExporter {
     final tx = cx + rMid * math.cos(angle);
     final ty = cy + rMid * math.sin(angle);
 
-    final left = dx + tx - 7; // apply dx so numbers align after shifting draw area
+    final left =
+        dx + tx - 7; // apply dx so numbers align after shifting draw area
     final top = height - ty - 7;
 
     return pw.Positioned(
@@ -313,7 +344,11 @@ class PdfExporter {
         alignment: pw.Alignment.center,
         child: pw.Text(
           value.toString(),
-          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: p.PdfColors.white),
+          style: pw.TextStyle(
+            fontSize: 11,
+            fontWeight: pw.FontWeight.bold,
+            color: p.PdfColors.white,
+          ),
         ),
       ),
     );
@@ -331,7 +366,10 @@ class PdfExporter {
     final right = _distanceCounts(goalsConceded);
 
     final maxLeft = math.max(left['2m']!, math.max(left['5m']!, left['7m']!));
-    final maxRight = math.max(right['2m']!, math.max(right['5m']!, right['7m']!));
+    final maxRight = math.max(
+      right['2m']!,
+      math.max(right['5m']!, right['7m']!),
+    );
 
     // We tekenen met een kleine gutter aan de BUITENZIJDES, zodat de labels zichtbaar zijn.
     const double outsideGutter = _outsideGutter;
@@ -351,7 +389,9 @@ class PdfExporter {
       final seq = [values['7m']!, values['5m']!, values['2m']!];
 
       // Tekenbreedte: volledige breedte minus gutter aan buitenzijde
-      final double drawDx = rightSide ? 0.0 : outsideGutter; // links schuiven we het tekengebied iets naar rechts
+      final double drawDx = rightSide
+          ? 0.0
+          : outsideGutter; // links schuiven we het tekengebied iets naar rechts
       final double drawW = width - outsideGutter;
 
       return pw.Container(
@@ -396,19 +436,64 @@ class PdfExporter {
             ),
 
             // Cijfers op ringen (gecorrigeerd met drawDx)
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 0, value: seq[0], dx: drawDx),
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 1, value: seq[1], dx: drawDx),
-            _ringNumberOverlayQuarter(rightSide: rightSide, width: drawW, height: height, ringIndex: 2, value: seq[2], dx: drawDx),
+            _ringNumberOverlayQuarter(
+              rightSide: rightSide,
+              width: drawW,
+              height: height,
+              ringIndex: 0,
+              value: seq[0],
+              dx: drawDx,
+            ),
+            _ringNumberOverlayQuarter(
+              rightSide: rightSide,
+              width: drawW,
+              height: height,
+              ringIndex: 1,
+              value: seq[1],
+              dx: drawDx,
+            ),
+            _ringNumberOverlayQuarter(
+              rightSide: rightSide,
+              width: drawW,
+              height: height,
+              ringIndex: 2,
+              value: seq[2],
+              dx: drawDx,
+            ),
 
             // 2m/5m/7m labels in de buiten-gutter, goed zichtbaar
             if (!rightSide) ...[
-              pw.Positioned(left: 2, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12))),
-              pw.Positioned(left: 2, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12))),
-              pw.Positioned(left: 2, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12))),
+              pw.Positioned(
+                left: 2,
+                bottom: height * .10,
+                child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12)),
+              ),
+              pw.Positioned(
+                left: 2,
+                bottom: height * .45,
+                child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12)),
+              ),
+              pw.Positioned(
+                left: 2,
+                bottom: height * .80,
+                child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12)),
+              ),
             ] else ...[
-              pw.Positioned(right: 2, bottom: height * .10, child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12))),
-              pw.Positioned(right: 2, bottom: height * .45, child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12))),
-              pw.Positioned(right: 2, bottom: height * .80, child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12))),
+              pw.Positioned(
+                right: 2,
+                bottom: height * .10,
+                child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12)),
+              ),
+              pw.Positioned(
+                right: 2,
+                bottom: height * .45,
+                child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12)),
+              ),
+              pw.Positioned(
+                right: 2,
+                bottom: height * .80,
+                child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12)),
+              ),
             ],
           ],
         ),
@@ -422,21 +507,34 @@ class PdfExporter {
         children: [
           pw.SizedBox(
             width: leftWidth,
-            child: quarter(rightSide: false, values: left, baseColor: _green, maxValue: maxLeft, width: leftWidth),
+            child: quarter(
+              rightSide: false,
+              values: left,
+              baseColor: _green,
+              maxValue: maxLeft,
+              width: leftWidth,
+            ),
           ),
           if (middleGapWidth > 0) pw.SizedBox(width: middleGapWidth),
           pw.Spacer(), // duwt de rechter kwart naar de uiterste rechterzijde van de rij
           pw.SizedBox(
             width: rightWidth,
-            child: quarter(rightSide: true, values: right, baseColor: _red, maxValue: maxRight, width: rightWidth),
+            child: quarter(
+              rightSide: true,
+              values: right,
+              baseColor: _red,
+              maxValue: maxRight,
+              width: rightWidth,
+            ),
           ),
         ],
       ),
     );
   }
 
-  static double _barsBlockHeight(int itemCount) =>
-      itemCount <= 0 ? _barHeight : itemCount * _barHeight + (itemCount - 1) * _barGap;
+  static double _barsBlockHeight(int itemCount) => itemCount <= 0
+      ? _barHeight
+      : itemCount * _barHeight + (itemCount - 1) * _barGap;
 
   // Player card (container scaled; heatmap not scaled; quarter-circles pinned to bottom)
   static pw.Widget _playerCard({
@@ -462,16 +560,28 @@ class PdfExporter {
     final colRightWidth = availableWidth * 0.37;
 
     final barsHeight = _barsBlockHeight(typesOrder.length);
-    final heatmapHeight = math.max(110.0, barsHeight); // enlarge a bit; not scaled with container
+    final heatmapHeight = math.max(
+      110.0,
+      barsHeight,
+    ); // enlarge a bit; not scaled with container
 
     const double titleRowEstimate = 22.0;
-    final double baseHeight = (2 * verticalPad) + titleRowEstimate + 6 + barsHeight + 10 + heatmapHeight;
+    final double baseHeight =
+        (2 * verticalPad) +
+        titleRowEstimate +
+        6 +
+        barsHeight +
+        10 +
+        heatmapHeight;
     final double containerHeight = baseHeight * containerScale;
 
     return pw.Container(
       width: cardWidth,
       height: containerHeight,
-      padding: const pw.EdgeInsets.symmetric(horizontal: horizontalPad, vertical: verticalPad),
+      padding: const pw.EdgeInsets.symmetric(
+        horizontal: horizontalPad,
+        vertical: verticalPad,
+      ),
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: p.PdfColors.grey600, width: 0.8),
         borderRadius: pw.BorderRadius.circular(6),
@@ -487,7 +597,11 @@ class PdfExporter {
                   alignment: pw.Alignment.centerLeft,
                   child: pw.Text(
                     'Doelpunten',
-                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _green),
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _green,
+                    ),
                   ),
                 ),
               ),
@@ -495,7 +609,10 @@ class PdfExporter {
                 child: pw.Center(
                   child: pw.Text(
                     playerName,
-                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -504,7 +621,11 @@ class PdfExporter {
                   alignment: pw.Alignment.centerRight,
                   child: pw.Text(
                     'Tegendoelpunten',
-                    style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: _red),
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _red,
+                    ),
                   ),
                 ),
               ),

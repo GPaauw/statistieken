@@ -19,7 +19,6 @@ class MatchController {
 
   // Spelersnamen
   TeamPlayers homePlayers = TeamPlayers.default16();
-  TeamPlayers awayPlayers = TeamPlayers.default16();
 
   // UI callback
   final void Function()? onTick;
@@ -53,20 +52,21 @@ class MatchController {
     onTick?.call();
   }
 
-  // Goal toevoegen (met optionele 'concededPlayerNumber')
-  void addGoal(
-    Team team,
-    int playerNumber,
-    GoalType type, {
-    int? concededPlayerNumber,
-  }) {
+  void addHomeGoal(int playerNumber, GoalType type) {
+    _addGoal(Team.home, playerNumber, type);
+  }
+
+  void addConcededGoal(int playerNumber, GoalType type) {
+    _addGoal(Team.away, playerNumber, type);
+  }
+
+  void _addGoal(Team team, int playerNumber, GoalType type) {
     goals.add(
       Goal(
         secondStamp: elapsedSeconds,
         team: team,
         playerNumber: playerNumber,
         type: type,
-        concededPlayerNumber: concededPlayerNumber,
       ),
     );
 
@@ -81,11 +81,6 @@ class MatchController {
   // Spelers updaten
   void updateHomePlayers(TeamPlayers players) {
     homePlayers = players;
-    onTick?.call();
-  }
-
-  void updateAwayPlayers(TeamPlayers players) {
-    awayPlayers = players;
     onTick?.call();
   }
 

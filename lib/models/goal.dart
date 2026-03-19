@@ -7,12 +7,12 @@ enum Team { home, away }
 /// Type doelpunt
 enum GoalType {
   smallChance2m, // Klein kansje 2m
-  midRange5m,    // Mid range 5m
-  longRange7m,   // Afstander 7m
-  turnaround,    // Omdraaibal
-  throughBall,   // Doorloopbal
-  freeThrow,     // Vrije bal
-  penalty,       // Strafworp
+  midRange5m, // Mid range 5m
+  longRange7m, // Afstander 7m
+  turnaround, // Omdraaibal
+  throughBall, // Doorloopbal
+  freeThrow, // Vrije bal
+  penalty, // Strafworp
 }
 
 extension GoalTypeLabel on GoalType {
@@ -36,24 +36,29 @@ extension GoalTypeLabel on GoalType {
   }
 }
 
-/// Doelpunt met tijd, team, scorer (#), type en (optioneel) wie 'm tegen kreeg (#).
+/// Geregistreerd doelpuntmoment met tijd, scorend team, thuisspeler en type.
 @immutable
 class Goal {
   final int secondStamp;
   final Team team;
+
+  /// Het thuisspelersnummer dat bij dit moment hoort.
+  ///
+  /// - Bij [Team.home] is dit de speler die scoorde.
+  /// - Bij [Team.away] is dit de thuisspeler die het doelpunt tegen kreeg.
   final int playerNumber;
   final GoalType type;
-
-  /// De speler die de goal tegen kreeg (nummer uit het verdedigende team).
-  final int? concededPlayerNumber;
 
   const Goal({
     required this.secondStamp,
     required this.team,
     required this.playerNumber,
     required this.type,
-    this.concededPlayerNumber,
   });
+
+  bool get isHomeGoal => team == Team.home;
+
+  bool get isAwayGoal => team == Team.away;
 
   String get formattedTime {
     final m = (secondStamp ~/ 60).toString().padLeft(2, '0');
@@ -61,6 +66,5 @@ class Goal {
     return '$m:$s';
   }
 
-  String get teamLabel => team == Team.home ? "KV Flamingo's" : "Tegenstanders";
-  
+  String get teamLabel => isHomeGoal ? "KV Flamingo's" : 'Tegenstanders';
 }
