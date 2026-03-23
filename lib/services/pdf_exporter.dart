@@ -732,15 +732,18 @@ class PdfExporter {
             ],
           ),
 
-          pw.SizedBox(height: 8),
+          pw.Spacer(),
 
-          _distanceQuarterSection(
-            goalsScored: goalsScored,
-            goalsConceded: goalsConceded,
-            height: heatmapHeight,
-            leftWidth: colLeftWidth,
-            middleGapWidth: 0.0, // geen middenspleet
-            rightWidth: colRightWidth,
+          pw.Align(
+            alignment: pw.Alignment.bottomCenter,
+            child: _distanceQuarterSection(
+              goalsScored: goalsScored,
+              goalsConceded: goalsConceded,
+              height: heatmapHeight,
+              leftWidth: colLeftWidth,
+              middleGapWidth: 0.0, // geen middenspleet
+              rightWidth: colRightWidth,
+            ),
           ),
         ],
       ),
