@@ -5,6 +5,7 @@ import '../models/goal.dart';
 import '../models/match_event.dart';
 import '../models/players.dart';
 import '../services/pdf_exporter.dart';
+import '../services/team_names.dart';
 import '../widgets/goal_type_picker.dart';
 import '../widgets/player_name_editor.dart';
 import '../widgets/team_players_columns.dart';
@@ -40,8 +41,8 @@ class _HomePageState extends State<HomePage> {
   Future<void> _exportPdf() async {
     await PdfExporter.shareReport(
       c: _controller,
-      homeTeamName: "KV Flamingo's",
-      awayTeamName: 'Tegenstanders',
+      homeTeamName: TeamNames.homeTeamName,
+      awayTeamName: TeamNames.awayTeamName,
     );
   }
 
@@ -355,7 +356,7 @@ class _MatchOverviewPanel extends StatelessWidget {
                     ),
                     Expanded(
                       child: _ScoreValue(
-                        label: 'Tegenstanders',
+                        label: TeamNames.awayTeamName,
                         score: awayScore,
                         color: Colors.red.shade600,
                       ),
@@ -523,7 +524,7 @@ class _GoalTimeline extends StatelessWidget {
       case PlayerEventType.goalAgainst:
         return _TimelineEventDisplay(
           title: '$playerName krijgt tegen - ${event.goalType!.label}',
-          subtitle: 'Tegenstanders',
+          subtitle: TeamNames.awayTeamName,
           icon: Icons.remove_circle,
           color: Colors.red,
         );

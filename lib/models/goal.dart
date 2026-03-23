@@ -1,5 +1,6 @@
 // lib/models/goal.dart
 import 'package:flutter/foundation.dart';
+import '../services/team_names.dart';
 
 /// Team aanduiding
 enum Team { home, away }
@@ -66,5 +67,5 @@ class Goal {
     return '$m:$s';
   }
 
-  String get teamLabel => isHomeGoal ? "KV Flamingo's" : 'Tegenstanders';
+  String get teamLabel => isHomeGoal ? TeamNames.homeTeamName : TeamNames.awayTeamName;
 }

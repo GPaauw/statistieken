@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 
 import '../controllers/match_controller.dart';
 import '../models/goal.dart';
+import 'team_names.dart';
 
 class PdfExporter {
   // Container scaling for the player cards in the PDF summary.
@@ -21,12 +22,15 @@ class PdfExporter {
 
   static Future<Uint8List> buildReport({
     required MatchController c,
-    String homeTeamName = "KV Flamingo's",
-    String awayTeamName = 'Tegenstanders',
+    String? homeTeamName,
+    String? awayTeamName,
     DateTime? dateTime,
   }) async {
     final now = dateTime ?? DateTime.now();
     final doc = pw.Document();
+
+    final homeName = homeTeamName ?? TeamNames.homeTeamName;
+    final awayName = awayTeamName ?? TeamNames.awayTeamName;
 
     String fmt2(int v) => v.toString().padLeft(2, '0');
     String fmtTime(int seconds) {
@@ -61,7 +65,7 @@ class PdfExporter {
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('$homeTeamName vs $awayTeamName', style: h2),
+              pw.Text('$homeName vs $awayName', style: h2),
               pw.Text('Score: ${c.homeScore} - ${c.awayScore}', style: h2),
             ],
           ),
@@ -86,7 +90,7 @@ class PdfExporter {
                 }
                 rows.add([
                   fmtTime(g.secondStamp),
-                  g.team == Team.home ? homeTeamName : awayTeamName,
+                  g.team == Team.home ? homeName : awayName,
                   homePlayerName(g),
                   actionLabel(g),
                   g.type.label,
@@ -112,12 +116,11 @@ class PdfExporter {
           pw.Bullet(text: 'Totale speeltijd: ${fmtTime(c.elapsedSeconds)}'),
           pw.Bullet(text: 'Totaal geregistreerde momenten: ${c.goals.length}'),
           pw.Bullet(
-            text:
-                '$homeTeamName: ${c.homeScore} | $awayTeamName: ${c.awayScore}',
+            text: '$homeName: ${c.homeScore} | $awayName: ${c.awayScore}',
           ),
 
           pw.SizedBox(height: 12),
-          pw.Text("Spelerssamenvatting (KV Flamingo's)", style: h2),
+          pw.Text('Spelerssamenvatting (' + homeName + ')', style: h2),
           pw.SizedBox(height: 6),
 
           pw.Wrap(
@@ -152,8 +155,8 @@ class PdfExporter {
 
   static Future<void> shareReport({
     required MatchController c,
-    String homeTeamName = "KV Flamingo's",
-    String awayTeamName = 'Tegenstanders',
+    String? homeTeamName,
+    String? awayTeamName,
     DateTime? dateTime,
   }) async {
     final now = dateTime ?? DateTime.now();
