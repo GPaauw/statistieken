@@ -7160,7 +7160,7 @@ s.push(new B.cl(f,o,l.$5$baseColor$maxValue$rightSide$values$width(A.kx,p,!0,m,f
 return new B.cl(o,c,B.ar2(s,A.Nb,A.dT))},
 avS(a,b){var s=null,r=new B.qM(A.hh,12,A.lS)
 r=B.H2(new B.wa(r,r,r,r),s,s,A.pP)
-return B.f_(A.e6,B.dp(a+"\n"+b,B.fG(s,s,s,s,s,s,s,s,s,A.bJ,s,s,11,s,A.bm,s,!0,s,s,s,s),A.IB,s),s,r,86,s,A.Ou,86)},
+return B.f_(A.e6,B.dp(a+"\n"+b,B.fG(s,s,s,s,s,s,s,s,s,A.bJ,s,s,11,s,A.bm,s,!0,s,s,s,s),A.IB,s),s,r,95,s,A.Ou,95)},
 a82:function a82(){},
 a83:function a83(a){this.a=a},
 a84:function a84(a){this.a=a},
@@ -40082,7 +40082,7 @@ return B.aIh(b.b>1150?B.px(B.b([B.ru(s,5),A.Ig,B.fD(r,null,320),A.Ig,B.ru(q,4)],
 $S:248}
 B.QL.prototype={
 N(a){var s=this,r=null,q=t.p
-return B.YD(new B.bR(A.fD,B.eY(B.b([B.px(B.b([B.ru(B.eY(B.b([B.d4("KV Flamingo's",r,r,r,B.ix(r,r,A.eg,r,r,r,r,r,r,r,r,18,r,r,A.cP,r,r,!0,r,r,r,r,r,r,r,r),r,r),A.Ih,B.d4("Klik per speler op Doelpunt of Tegen en kies daarna het type.",r,r,r,B.M(a).ok.z,r,r)],q),A.cy,A.aT,A.bt),1),A.If,B.awO(A.Pa,A.aJ_,new B.aiF(s,a))],q),A.cy,A.bt,0),A.dZ,new B.Ne(s.c,s.d,s.e,s.f,s.r,r)],q),A.cl,A.aT,A.bt),r),2)}}
+return B.YD(new B.bR(A.fD,B.eY(B.b([B.px(B.b([B.ru(B.eY(B.b([B.d4("KV Flamingo's",r,r,r,B.ix(r,r,A.eg,r,r,r,r,r,r,r,r,18,r,r,A.cP,r,r,!0,r,r,r,r,r,r,r,r),r,r),A.Ih,B.d4("Registreer per speler doelpunt, rebound, assist of onderschepping.",r,r,r,B.M(a).ok.z,r,r)],q),A.cy,A.aT,A.bt),1),A.If,B.awO(A.Pa,A.aJ_,new B.aiF(s,a))],q),A.cy,A.bt,0),A.dZ,new B.Ne(s.c,s.d,s.e,s.f,s.r,r)],q),A.cl,A.aT,A.bt),r),2)}}
 B.aiF.prototype={
 $0(){var s=0,r=B.R(t.H),q=this,p,o
 var $async$$0=B.S(function(a,b){if(a===1)return B.O(b,r)
@@ -40202,7 +40202,7 @@ b4=b3<=0?16:b3*16+(b3-1)*8
 b5=Math.max(110,b4)
 b3=new B.qM(A.DG,0.8,A.lS)
 b6=new B.zA(6,6)
-c0.push(B.f_(b8,new B.wD(A.fb,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([new B.mz(A.dy,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([new B.lG(1,A.fH,new B.lo(A.pD,b8,b8,B.dp("Doelpunten",B.fG(b8,A.hh,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,12,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8))),new B.lG(1,A.fH,new B.wl(A.e6,b8,b8,B.dp(a2,B.fG(b8,b8,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,16,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8))),new B.lG(1,A.fH,new B.lo(A.JW,b8,b8,B.dp("Tegendoelpunten",B.fG(b8,A.kx,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,12,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8)))],p)),new B.cl(b8,6,b8),new B.mz(A.dy,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([B.f_(b8,B.avP(b0,A.hh,A.DF,183.52,a9),b8,b8,b8,b8,b8,183.52),new B.cl(12,b8,b8),B.f_(b8,B.aGN(a9),b8,b8,b8,b8,b8,128.96),new B.cl(12,b8,b8),B.f_(b8,B.avP(b1,A.kx,A.DH,183.52,a9),b8,b8,b8,b8,b8,183.52)],p)),new B.cl(b8,18,b8),new B.mz(A.dy,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([B.f_(b8,B.aqQ(A.hh,A.DF,b2,183.52,a5),b8,b8,b8,b8,b8,183.52),new B.cl(12,b8,b8),B.f_(A.e6,B.dp("Rebounds",B.fG(b8,b8,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,12,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8),b8,b8,b8,b8,b8,128.96),new B.cl(12,b8,b8),B.f_(b8,B.aqQ(A.kx,A.DH,b2,183.52,a6),b8,b8,b8,b8,b8,183.52)],p)),new B.cl(b8,20,b8),new B.mz(A.dy,A.ay_,A.cT,A.dF,A.dn,new B.j0(),B.b([B.avS("Assist",a7),new B.cl(32,b8,b8),B.avS("Onderschepping",a8)],p)),new B.cl(b8,16,b8),B.aGM(a4,a3,b5,183.52,0,183.52)],p)),b8,new B.H3(b8,new B.wa(b3,b3,b3,b3),new B.GZ(b6,b6,b6,b6),A.hW),(44+b4+18+16+20+86+16+b5)*1.5,b8,A.Od,540))}return B.b([b9,new B.cl(b8,4,b8),c1,new B.cl(b8,16,b8),o,new B.cl(b8,12,b8),n,new B.cl(b8,16,b8),m,new B.cl(b8,6,b8),l,i,s,new B.cl(b8,12,b8),r,new B.cl(b8,6,b8),new B.O7(12,12,new B.O8(),c0)],p)},
+c0.push(B.f_(b8,new B.wD(A.fb,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([new B.mz(A.dy,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([new B.lG(1,A.fH,new B.lo(A.pD,b8,b8,B.dp("Doelpunten",B.fG(b8,A.hh,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,12,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8))),new B.lG(1,A.fH,new B.wl(A.e6,b8,b8,B.dp(a2,B.fG(b8,b8,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,16,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8))),new B.lG(1,A.fH,new B.lo(A.JW,b8,b8,B.dp("Tegendoelpunten",B.fG(b8,A.kx,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,12,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8)))],p)),new B.cl(b8,6,b8),new B.mz(A.dy,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([B.f_(b8,B.avP(b0,A.hh,A.DF,183.52,a9),b8,b8,b8,b8,b8,183.52),new B.cl(12,b8,b8),B.f_(b8,B.aGN(a9),b8,b8,b8,b8,b8,128.96),new B.cl(12,b8,b8),B.f_(b8,B.avP(b1,A.kx,A.DH,183.52,a9),b8,b8,b8,b8,b8,183.52)],p)),new B.cl(b8,18,b8),new B.mz(A.dy,A.dT,A.cT,A.dF,A.dn,new B.j0(),B.b([B.f_(b8,B.aqQ(A.hh,A.DF,b2,183.52,a5),b8,b8,b8,b8,b8,183.52),new B.cl(12,b8,b8),B.f_(A.e6,B.dp("Rebounds",B.fG(b8,b8,b8,b8,b8,b8,b8,b8,b8,A.bJ,b8,b8,12,b8,A.bm,b8,!0,b8,b8,b8,b8),b8,b8),b8,b8,b8,b8,b8,128.96),new B.cl(12,b8,b8),B.f_(b8,B.aqQ(A.kx,A.DH,b2,183.52,a6),b8,b8,b8,b8,b8,183.52)],p)),new B.cl(b8,28,b8),new B.mz(A.dy,A.ay_,A.cT,A.dF,A.dn,new B.j0(),B.b([B.avS("Assist",a7),new B.cl(32,b8,b8),B.avS("Onderschepping",a8)],p)),new B.cl(b8,16,b8),B.aGM(a4,a3,b5,183.52,0,183.52)],p)),b8,new B.H3(b8,new B.wa(b3,b3,b3,b3),new B.GZ(b6,b6,b6,b6),A.hW),(44+b4+18+16+28+95+16+b5)*1.5,b8,A.Od,540))}return B.b([b9,new B.cl(b8,4,b8),c1,new B.cl(b8,16,b8),o,new B.cl(b8,12,b8),n,new B.cl(b8,16,b8),m,new B.cl(b8,6,b8),l,i,s,new B.cl(b8,12,b8),r,new B.cl(b8,6,b8),new B.O7(12,12,new B.O8(),c0)],p)},
 $S:278}
 B.a7Y.prototype={
 $0(){var s,r,q,p,o,n,m,l,k,j,i,h,g,f,e=this,d=B.b([],t.rj)

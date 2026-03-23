@@ -570,7 +570,7 @@ class PdfExporter {
 
     final barsHeight = _barsBlockHeight(typesOrder.length);
     const reboundBarsHeight = _barHeight;
-    const circlesHeight = 86.0;
+    const circlesHeight = 95.0;
     final heatmapHeight = math.max(
       110.0,
       barsHeight,
@@ -584,7 +584,7 @@ class PdfExporter {
         barsHeight +
         18 +
         reboundBarsHeight +
-        20 +
+        28 +
         circlesHeight +
         16 +
         heatmapHeight;
@@ -721,7 +721,7 @@ class PdfExporter {
             ],
           ),
 
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 28),
 
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.center,
@@ -749,8 +749,8 @@ class PdfExporter {
 
   static pw.Widget _statCircle({required String label, required int value}) {
     return pw.Container(
-      width: 86,
-      height: 86,
+      width: 95,
+      height: 95,
       decoration: pw.BoxDecoration(
         shape: pw.BoxShape.circle,
         border: pw.Border.all(color: _green, width: 12),
