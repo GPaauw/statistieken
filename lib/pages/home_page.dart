@@ -38,6 +38,38 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  void _editAwayNameDialog() {
+    final controller = TextEditingController(text: TeamNames.awayTeamName);
+    showDialog<void>(
+      context: context,
+      builder: (dContext) => AlertDialog(
+        title: const Text('Bewerk tegenstandersnaam'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Naam tegenstanders'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dContext).pop(),
+            child: const Text('Annuleer'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final val = controller.text.trim();
+              if (val.isNotEmpty) {
+                TeamNames.setNames(away: val);
+                _safeSetState();
+              }
+              Navigator.of(dContext).pop();
+            },
+            child: const Text('Opslaan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _exportPdf() async {
     await PdfExporter.shareReport(
       c: _controller,
@@ -175,6 +207,7 @@ class _HomePageState extends State<HomePage> {
       onReset: _controller.reset,
       onUndo: _controller.canUndo ? () => _controller.undo() : null,
       onExportPdf: _exportPdf,
+      onEditAwayName: _editAwayNameDialog,
     );
 
     final timeline = _GoalTimeline(
@@ -308,6 +341,7 @@ class _MatchOverviewPanel extends StatelessWidget {
   final VoidCallback onReset;
   final VoidCallback? onUndo;
   final Future<void> Function() onExportPdf;
+  final VoidCallback onEditAwayName;
 
   const _MatchOverviewPanel({
     required this.homeScore,
@@ -320,6 +354,7 @@ class _MatchOverviewPanel extends StatelessWidget {
     required this.onReset,
     required this.onUndo,
     required this.onExportPdf,
+    required this.onEditAwayName,
   });
 
   @override
@@ -359,6 +394,7 @@ class _MatchOverviewPanel extends StatelessWidget {
                         label: TeamNames.awayTeamName,
                         score: awayScore,
                         color: Colors.red.shade600,
+                        onEdit: onEditAwayName,
                       ),
                     ),
                   ],
@@ -423,25 +459,45 @@ class _ScoreValue extends StatelessWidget {
   final String label;
   final int score;
   final Color color;
+  final VoidCallback? onEdit;
 
   const _ScoreValue({
     required this.label,
     required this.score,
     required this.color,
+    this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ),
+            if (onEdit != null) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: onEdit,
+                child: Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Icon(Icons.edit, size: 18, color: color),
+                ),
+              ),
+            ],
+          ],
         ),
         const SizedBox(height: 8),
         Text(
