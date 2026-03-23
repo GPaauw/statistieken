@@ -10,8 +10,8 @@ import '../controllers/match_controller.dart';
 import '../models/goal.dart';
 
 class PdfExporter {
-  // Container scaling (frame 1.5x larger, content keeps size)
-  static const double _containerScale = 1.5;
+  // Container scaling for the player cards in the PDF summary.
+  static const double _containerScale = 1.0;
   static const double _cardBaseWidth = 360.0;
 
   // -------- Shared tuning constants --------
@@ -170,9 +170,9 @@ class PdfExporter {
   }
 
   // ------------- Bars, labels, and counts -------------
-  static const _barHeight = 16.0;
+  static const _barHeight = 14.0;
   static const _barRadius = 4.0;
-  static const _barGap = 8.0;
+  static const _barGap = 6.0;
 
   static final _green = p.PdfColors.green600;
   static final _greenBack = p.PdfColors.green300;
@@ -558,8 +558,8 @@ class PdfExporter {
     final concededCounts = _countByType(goalsConceded);
 
     const horizontalPad = 10.0;
-    const verticalPad = 8.0;
-    const colGap = 12.0;
+    const verticalPad = 6.0;
+    const colGap = 10.0;
 
     final innerWidth = cardWidth - 2 * horizontalPad;
     final availableWidth = innerWidth - 2 * colGap;
@@ -570,23 +570,23 @@ class PdfExporter {
 
     final barsHeight = _barsBlockHeight(typesOrder.length);
     const reboundBarsHeight = _barHeight;
-    const circlesHeight = 95.0;
+    const circlesHeight = 112.0;
     final heatmapHeight = math.max(
-      110.0,
+      88.0,
       barsHeight,
-    ); // enlarge a bit; not scaled with container
+    );
 
-    const double titleRowEstimate = 22.0;
+    const double titleRowEstimate = 20.0;
     final double baseHeight =
         (2 * verticalPad) +
         titleRowEstimate +
-        6 +
+        4 +
         barsHeight +
-        18 +
+        12 +
         reboundBarsHeight +
-        28 +
+        34 +
         circlesHeight +
-        16 +
+        8 +
         heatmapHeight;
     final double containerHeight = baseHeight * containerScale;
 
@@ -646,7 +646,7 @@ class PdfExporter {
               ),
             ],
           ),
-          pw.SizedBox(height: 6),
+          pw.SizedBox(height: 4),
 
           // Bars + labels (middelste kolom labels blijven gecentreerd)
           pw.Row(
@@ -680,7 +680,7 @@ class PdfExporter {
             ],
           ),
 
-          pw.SizedBox(height: 18),
+          pw.SizedBox(height: 12),
 
           pw.Row(
             crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -721,7 +721,7 @@ class PdfExporter {
             ],
           ),
 
-          pw.SizedBox(height: 28),
+          pw.SizedBox(height: 34),
 
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.center,
@@ -732,7 +732,7 @@ class PdfExporter {
             ],
           ),
 
-          pw.SizedBox(height: 16),
+          pw.SizedBox(height: 8),
 
           _distanceQuarterSection(
             goalsScored: goalsScored,
@@ -748,19 +748,21 @@ class PdfExporter {
   }
 
   static pw.Widget _statCircle({required String label, required int value}) {
+    final fontSize = label.length > 12 ? 9.5 : 11.0;
+
     return pw.Container(
-      width: 95,
-      height: 95,
+      width: 112,
+      height: 112,
       decoration: pw.BoxDecoration(
         shape: pw.BoxShape.circle,
         border: pw.Border.all(color: _green, width: 12),
       ),
       alignment: pw.Alignment.center,
-      padding: const pw.EdgeInsets.all(8),
+      padding: const pw.EdgeInsets.all(6),
       child: pw.Text(
         '$label\n$value',
         textAlign: pw.TextAlign.center,
-        style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
+        style: pw.TextStyle(fontSize: fontSize, fontWeight: pw.FontWeight.bold),
       ),
     );
   }
