@@ -727,8 +727,8 @@ class PdfExporter {
             mainAxisAlignment: pw.MainAxisAlignment.center,
             children: [
               _statCircle(label: 'Assist', value: assists),
-              pw.SizedBox(width: 32),
-              _statCircle(label: 'Onderschepping', value: interceptions),
+              pw.SizedBox(width: 28),
+              _statCircle(label: 'Onderscheppingen', value: interceptions),
             ],
           ),
 
@@ -748,17 +748,17 @@ class PdfExporter {
   }
 
   static pw.Widget _statCircle({required String label, required int value}) {
-    final fontSize = label.length > 12 ? 9.5 : 11.0;
+    final fontSize = label.length > 14 ? 8.4 : (label.length > 10 ? 10.0 : 11.0);
 
     return pw.Container(
-      width: 112,
-      height: 112,
+      width: 118,
+      height: 118,
       decoration: pw.BoxDecoration(
         shape: pw.BoxShape.circle,
         border: pw.Border.all(color: _green, width: 12),
       ),
       alignment: pw.Alignment.center,
-      padding: const pw.EdgeInsets.all(6),
+      padding: const pw.EdgeInsets.all(5),
       child: pw.Text(
         '$label\n$value',
         textAlign: pw.TextAlign.center,
