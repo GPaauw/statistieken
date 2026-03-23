@@ -474,12 +474,14 @@ class _ScoreValue extends StatelessWidget {
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(
+            Expanded(
               child: Text(
                 label,
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                softWrap: false,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -488,12 +490,13 @@ class _ScoreValue extends StatelessWidget {
               ),
             ),
             if (onEdit != null) ...[
-              const SizedBox(width: 6),
-              GestureDetector(
+              const SizedBox(width: 4),
+              InkWell(
                 onTap: onEdit,
+                borderRadius: BorderRadius.circular(12),
                 child: Padding(
-                  padding: const EdgeInsets.all(2.0),
-                  child: Icon(Icons.edit, size: 18, color: color),
+                  padding: const EdgeInsets.all(2),
+                  child: Icon(Icons.edit, size: 16, color: color),
                 ),
               ),
             ],
