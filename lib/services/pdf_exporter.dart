@@ -134,6 +134,10 @@ class PdfExporter {
                   goalsConceded: c.goals
                       .where((g) => g.team == Team.away && g.playerNumber == n)
                       .toList(),
+                  reboundsWon: c.reboundWonByPlayer[n] ?? 0,
+                  reboundsLost: c.reboundLostByPlayer[n] ?? 0,
+                  assists: c.assistByPlayer[n] ?? 0,
+                  interceptions: c.interceptionByPlayer[n] ?? 0,
                   cardWidth: _cardBaseWidth * _containerScale,
                   containerScale: _containerScale,
                 ),
@@ -542,6 +546,10 @@ class PdfExporter {
     required String playerName,
     required List<Goal> goalsScored,
     required List<Goal> goalsConceded,
+    required int reboundsWon,
+    required int reboundsLost,
+    required int assists,
+    required int interceptions,
     double cardWidth = _cardBaseWidth,
     double containerScale = 1.0,
   }) {
@@ -558,8 +566,11 @@ class PdfExporter {
     final colLeftWidth = availableWidth * 0.37;
     final colCenterWidth = availableWidth * 0.26;
     final colRightWidth = availableWidth * 0.37;
+    final reboundMaxValue = math.max(1, math.max(reboundsWon, reboundsLost));
 
     final barsHeight = _barsBlockHeight(typesOrder.length);
+    const reboundBarsHeight = _barHeight;
+    const circlesHeight = 86.0;
     final heatmapHeight = math.max(
       110.0,
       barsHeight,
@@ -571,7 +582,11 @@ class PdfExporter {
         titleRowEstimate +
         6 +
         barsHeight +
-        10 +
+        18 +
+        reboundBarsHeight +
+        20 +
+        circlesHeight +
+        16 +
         heatmapHeight;
     final double containerHeight = baseHeight * containerScale;
 
@@ -665,8 +680,59 @@ class PdfExporter {
             ],
           ),
 
-          // push quarter-circles to the bottom of the card
-          pw.Spacer(),
+          pw.SizedBox(height: 18),
+
+          pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
+            children: [
+              pw.Container(
+                width: colLeftWidth,
+                child: _barRow(
+                  value: reboundsWon,
+                  maxValue: reboundMaxValue,
+                  maxWidth: colLeftWidth,
+                  fill: _green,
+                  fillBack: _greenBack,
+                ),
+              ),
+              pw.SizedBox(width: colGap),
+              pw.Container(
+                width: colCenterWidth,
+                alignment: pw.Alignment.center,
+                child: pw.Text(
+                  'Rebounds',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.SizedBox(width: colGap),
+              pw.Container(
+                width: colRightWidth,
+                child: _barRow(
+                  value: reboundsLost,
+                  maxValue: reboundMaxValue,
+                  maxWidth: colRightWidth,
+                  fill: _red,
+                  fillBack: _redBack,
+                ),
+              ),
+            ],
+          ),
+
+          pw.SizedBox(height: 20),
+
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.center,
+            children: [
+              _statCircle(label: 'Assist', value: assists),
+              pw.SizedBox(width: 32),
+              _statCircle(label: 'Onderschepping', value: interceptions),
+            ],
+          ),
+
+          pw.SizedBox(height: 16),
 
           _distanceQuarterSection(
             goalsScored: goalsScored,
@@ -677,6 +743,24 @@ class PdfExporter {
             rightWidth: colRightWidth,
           ),
         ],
+      ),
+    );
+  }
+
+  static pw.Widget _statCircle({required String label, required int value}) {
+    return pw.Container(
+      width: 86,
+      height: 86,
+      decoration: pw.BoxDecoration(
+        shape: pw.BoxShape.circle,
+        border: pw.Border.all(color: _green, width: 12),
+      ),
+      alignment: pw.Alignment.center,
+      padding: const pw.EdgeInsets.all(8),
+      child: pw.Text(
+        '$label\n$value',
+        textAlign: pw.TextAlign.center,
+        style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold),
       ),
     );
   }

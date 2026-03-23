@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../controllers/match_controller.dart';
 import '../models/goal.dart';
+import '../models/match_event.dart';
 import '../models/players.dart';
 import '../services/pdf_exporter.dart';
 import '../widgets/goal_type_picker.dart';
@@ -58,14 +59,107 @@ class _HomePageState extends State<HomePage> {
     _controller.addConcededGoal(playerNumber, type);
   }
 
+  Future<void> _pickGoalAction(int playerNumber) async {
+    final selection = await _showTwoOptionPicker(
+      title: 'Doelpunt registreren',
+      primaryLabel: 'Voor',
+      secondaryLabel: 'Tegen',
+      primaryColor: Colors.blue.shade700,
+      secondaryColor: Colors.red.shade600,
+    );
+
+    if (selection == null) return;
+
+    if (selection == _TwoOptionSelection.primary) {
+      await _pickTypeAndAddHomeGoal(playerNumber);
+      return;
+    }
+
+    await _pickTypeAndAddConcededGoal(playerNumber);
+  }
+
+  Future<void> _pickReboundAction(int playerNumber) async {
+    final selection = await _showTwoOptionPicker(
+      title: 'Rebound registreren',
+      primaryLabel: 'Gewonnen',
+      secondaryLabel: 'Verloren',
+      primaryColor: Colors.green.shade700,
+      secondaryColor: Colors.red.shade600,
+    );
+
+    if (selection == null) return;
+
+    if (selection == _TwoOptionSelection.primary) {
+      _controller.addReboundWon(playerNumber);
+    } else {
+      _controller.addReboundLost(playerNumber);
+    }
+  }
+
+  Future<_TwoOptionSelection?> _showTwoOptionPicker({
+    required String title,
+    required String primaryLabel,
+    required String secondaryLabel,
+    required Color primaryColor,
+    required Color secondaryColor,
+  }) async {
+    return showModalBottomSheet<_TwoOptionSelection>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(sheetContext, _TwoOptionSelection.primary);
+                  },
+                  child: Text(primaryLabel),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: secondaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(sheetContext, _TwoOptionSelection.secondary);
+                  },
+                  child: Text(secondaryLabel),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final playersPanel = _HomePlayersPanel(
       players: _controller.homePlayers,
-      scoredCounts: _countsByPlayer(Team.home),
-      concededCounts: _countsByPlayer(Team.away),
-      onScoredPick: _pickTypeAndAddHomeGoal,
-      onConcededPick: _pickTypeAndAddConcededGoal,
+      onGoalPick: _pickGoalAction,
+      onReboundPick: _pickReboundAction,
+      onAssistPick: (playerNumber) => _controller.addAssist(playerNumber),
+      onInterceptionPick: (playerNumber) =>
+          _controller.addInterception(playerNumber),
       onEditPlayers: (players) => _controller.updateHomePlayers(players),
     );
 
@@ -74,7 +168,7 @@ class _HomePageState extends State<HomePage> {
       awayScore: _controller.awayScore,
       elapsedSeconds: _controller.elapsedSeconds,
       isRunning: _controller.isRunning,
-      totalEvents: _controller.goals.length,
+      totalEvents: _controller.totalEventsCount,
       onStart: _controller.start,
       onStop: _controller.stop,
       onReset: _controller.reset,
@@ -83,7 +177,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     final timeline = _GoalTimeline(
-      goals: _controller.goals,
+      events: _controller.events,
       homePlayers: _controller.homePlayers,
     );
 
@@ -120,30 +214,22 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  Map<int, int> _countsByPlayer(Team team) {
-    final map = <int, int>{};
-    for (final goal in _controller.goals.where((g) => g.team == team)) {
-      map[goal.playerNumber] = (map[goal.playerNumber] ?? 0) + 1;
-    }
-    return map;
-  }
 }
 
 class _HomePlayersPanel extends StatelessWidget {
   final TeamPlayers players;
-  final Map<int, int> scoredCounts;
-  final Map<int, int> concededCounts;
-  final void Function(int) onScoredPick;
-  final void Function(int) onConcededPick;
+  final void Function(int) onGoalPick;
+  final void Function(int) onReboundPick;
+  final void Function(int) onAssistPick;
+  final void Function(int) onInterceptionPick;
   final void Function(TeamPlayers) onEditPlayers;
 
   const _HomePlayersPanel({
     required this.players,
-    required this.scoredCounts,
-    required this.concededCounts,
-    required this.onScoredPick,
-    required this.onConcededPick,
+    required this.onGoalPick,
+    required this.onReboundPick,
+    required this.onAssistPick,
+    required this.onInterceptionPick,
     required this.onEditPlayers,
   });
 
@@ -173,7 +259,7 @@ class _HomePlayersPanel extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Klik per speler op Doelpunt of Tegen en kies daarna het type.',
+                        'Registreer per speler doelpunt, rebound, assist of onderschepping.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -198,10 +284,10 @@ class _HomePlayersPanel extends StatelessWidget {
             const SizedBox(height: 16),
             TeamPlayersColumns(
               players: players,
-              onScoredPick: onScoredPick,
-              onConcededPick: onConcededPick,
-              scoredCountsByPlayer: scoredCounts,
-              concededCountsByPlayer: concededCounts,
+              onGoalPick: onGoalPick,
+              onReboundPick: onReboundPick,
+              onAssistPick: onAssistPick,
+              onInterceptionPick: onInterceptionPick,
             ),
           ],
         ),
@@ -280,7 +366,7 @@ class _MatchOverviewPanel extends StatelessWidget {
                 TimerDisplay(seconds: elapsedSeconds, isRunning: isRunning),
                 const SizedBox(height: 16),
                 Text(
-                  'Geregistreerde momenten: $totalEvents',
+                  'Geregistreerde acties: $totalEvents',
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),
@@ -370,10 +456,10 @@ class _ScoreValue extends StatelessWidget {
 }
 
 class _GoalTimeline extends StatelessWidget {
-  final List<Goal> goals;
+  final List<PlayerEvent> events;
   final TeamPlayers homePlayers;
 
-  const _GoalTimeline({required this.goals, required this.homePlayers});
+  const _GoalTimeline({required this.events, required this.homePlayers});
 
   @override
   Widget build(BuildContext context) {
@@ -391,11 +477,11 @@ class _GoalTimeline extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
             ),
-            if (goals.isEmpty)
+            if (events.isEmpty)
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'Nog geen doelpunten',
+                  'Nog geen geregistreerde acties',
                   style: Theme.of(context).textTheme.titleMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -404,24 +490,18 @@ class _GoalTimeline extends StatelessWidget {
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: goals.length,
+                itemCount: events.length,
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
-                  final goal = goals[index];
-                  final isHome = goal.team == Team.home;
-                  final playerName = homePlayers.getName(goal.playerNumber);
-                  final title = isHome
-                      ? '$playerName scoort - ${goal.type.label}'
-                      : '$playerName krijgt tegen - ${goal.type.label}';
+                  final event = events[index];
+                  final playerName = homePlayers.getName(event.playerNumber);
+                  final eventDisplay = _eventDisplay(event, playerName);
 
                   return ListTile(
-                    leading: Icon(
-                      isHome ? Icons.add_circle : Icons.remove_circle,
-                      color: isHome ? Colors.blue : Colors.red,
-                    ),
-                    title: Text(title),
-                    subtitle: Text(goal.teamLabel),
-                    trailing: Text(goal.formattedTime),
+                    leading: Icon(eventDisplay.icon, color: eventDisplay.color),
+                    title: Text(eventDisplay.title),
+                    subtitle: Text(eventDisplay.subtitle),
+                    trailing: Text(event.formattedTime),
                   );
                 },
               ),
@@ -430,4 +510,67 @@ class _GoalTimeline extends StatelessWidget {
       ),
     );
   }
+
+  _TimelineEventDisplay _eventDisplay(PlayerEvent event, String playerName) {
+    switch (event.type) {
+      case PlayerEventType.goalFor:
+        return _TimelineEventDisplay(
+          title: '$playerName scoort voor - ${event.goalType!.label}',
+          subtitle: "KV Flamingo's",
+          icon: Icons.add_circle,
+          color: Colors.blue,
+        );
+      case PlayerEventType.goalAgainst:
+        return _TimelineEventDisplay(
+          title: '$playerName krijgt tegen - ${event.goalType!.label}',
+          subtitle: 'Tegenstanders',
+          icon: Icons.remove_circle,
+          color: Colors.red,
+        );
+      case PlayerEventType.reboundWon:
+        return _TimelineEventDisplay(
+          title: '$playerName pakt rebound',
+          subtitle: 'Gewonnen rebound',
+          icon: Icons.sports_basketball,
+          color: Colors.orange.shade700,
+        );
+      case PlayerEventType.reboundLost:
+        return _TimelineEventDisplay(
+          title: '$playerName verliest rebound',
+          subtitle: 'Verloren rebound',
+          icon: Icons.sports_basketball_outlined,
+          color: Colors.red.shade600,
+        );
+      case PlayerEventType.assist:
+        return _TimelineEventDisplay(
+          title: '$playerName geeft assist',
+          subtitle: 'Assist',
+          icon: Icons.handshake_outlined,
+          color: Colors.teal.shade700,
+        );
+      case PlayerEventType.interception:
+        return _TimelineEventDisplay(
+          title: '$playerName pakt onderschepping',
+          subtitle: 'Onderschepping',
+          icon: Icons.front_hand_outlined,
+          color: Colors.green.shade700,
+        );
+    }
+  }
+}
+
+enum _TwoOptionSelection { primary, secondary }
+
+class _TimelineEventDisplay {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+
+  const _TimelineEventDisplay({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+  });
 }

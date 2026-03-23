@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:Statistieken/controllers/match_controller.dart';
 import 'package:Statistieken/models/goal.dart';
+import 'package:Statistieken/models/match_event.dart';
 
 void main() {
   group('MatchController', () {
@@ -36,6 +37,42 @@ void main() {
       expect(controller.awayScore, 0);
       expect(controller.goals, hasLength(1));
       expect(controller.goals.single.playerNumber, 5);
+    });
+
+    test('registreert extra statistieken en undo werkt voor alle events', () {
+      final controller = MatchController();
+
+      controller.addAssist(3);
+      controller.addInterception(3);
+      controller.addReboundWon(3);
+      controller.addReboundLost(3);
+
+      expect(controller.totalEventsCount, 4);
+      expect(controller.assistByPlayer[3], 1);
+      expect(controller.interceptionByPlayer[3], 1);
+      expect(controller.reboundWonByPlayer[3], 1);
+      expect(controller.reboundLostByPlayer[3], 1);
+
+      controller.undo();
+      controller.undo();
+
+      expect(controller.totalEventsCount, 2);
+      expect(controller.assistByPlayer[3], 1);
+      expect(controller.interceptionByPlayer[3], 1);
+      expect(controller.reboundWonByPlayer[3], isNull);
+      expect(controller.reboundLostByPlayer[3], isNull);
+    });
+
+    test('tijdlijn-events blijven in invoervolgorde staan', () {
+      final controller = MatchController();
+
+      controller.addHomeGoal(4, GoalType.penalty);
+      controller.addAssist(4);
+
+      expect(controller.events, hasLength(2));
+      expect(controller.events.first.type, PlayerEventType.goalFor);
+      expect(controller.events.last.type, PlayerEventType.assist);
+      expect(controller.events.first.goalType, GoalType.penalty);
     });
   });
 }

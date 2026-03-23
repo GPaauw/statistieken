@@ -2,29 +2,27 @@
 import 'package:flutter/material.dart';
 import '../models/players.dart';
 
-/// Twee kolommen met thuisspelers en acties voor doelpunten en tegendoelpunten.
+/// Twee kolommen met thuisspelers en vier actieknoppen per speler.
 class TeamPlayersColumns extends StatelessWidget {
   final TeamPlayers players;
-  final void Function(int) onScoredPick;
-  final void Function(int) onConcededPick;
-  final Map<int, int>? scoredCountsByPlayer;
-  final Map<int, int>? concededCountsByPlayer;
+  final void Function(int) onGoalPick;
+  final void Function(int) onReboundPick;
+  final void Function(int) onAssistPick;
+  final void Function(int) onInterceptionPick;
 
   const TeamPlayersColumns({
     super.key,
     required this.players,
-    required this.onScoredPick,
-    required this.onConcededPick,
-    this.scoredCountsByPlayer,
-    this.concededCountsByPlayer,
+    required this.onGoalPick,
+    required this.onReboundPick,
+    required this.onAssistPick,
+    required this.onInterceptionPick,
   });
 
   @override
   Widget build(BuildContext context) {
     Widget playerCard(int n) {
       final name = players.getName(n);
-      final scored = scoredCountsByPlayer?[n] ?? 0;
-      final conceded = concededCountsByPlayer?[n] ?? 0;
 
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -49,31 +47,60 @@ class TeamPlayersColumns extends StatelessWidget {
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),
-              Row(
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Expanded(
+                  SizedBox(
+                    width: 140,
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.blue.shade700,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      onPressed: () => onScoredPick(n),
-                      icon: const Icon(Icons.add_circle_outline, size: 18),
-                      label: Text('Doelpunt $scored'),
+                      onPressed: () => onGoalPick(n),
+                      icon: const Icon(Icons.sports_soccer, size: 18),
+                      label: const Text('Doelpunt'),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
+                  SizedBox(
+                    width: 140,
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
+                        backgroundColor: Colors.orange.shade700,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      onPressed: () => onConcededPick(n),
-                      icon: const Icon(Icons.remove_circle_outline, size: 18),
-                      label: Text('Tegen $conceded'),
+                      onPressed: () => onReboundPick(n),
+                      icon: const Icon(Icons.sports_basketball, size: 18),
+                      label: const Text('Rebound'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 140,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.teal.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => onAssistPick(n),
+                      icon: const Icon(Icons.handshake_outlined, size: 18),
+                      label: const Text('Assist'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 140,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.green.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => onInterceptionPick(n),
+                      icon: const Icon(Icons.front_hand_outlined, size: 18),
+                      label: const Text('Onderschepping'),
                     ),
                   ),
                 ],
