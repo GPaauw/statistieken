@@ -26,7 +26,7 @@ class MatchController {
   Timer? _timer;
 
   // Spelersnamen
-  TeamPlayers homePlayers = TeamPlayers.default16();
+  TeamPlayers homePlayers = TeamPlayers.default8();
 
   // UI callback
   final void Function()? onTick;

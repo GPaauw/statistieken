@@ -9,6 +9,7 @@ class TeamPlayersColumns extends StatelessWidget {
   final void Function(int) onReboundPick;
   final void Function(int) onAssistPick;
   final void Function(int) onInterceptionPick;
+  final void Function(TeamPlayers)? onPlayersChanged;
 
   const TeamPlayersColumns({
     super.key,
@@ -17,12 +18,40 @@ class TeamPlayersColumns extends StatelessWidget {
     required this.onReboundPick,
     required this.onAssistPick,
     required this.onInterceptionPick,
+    this.onPlayersChanged,
   });
 
   @override
   Widget build(BuildContext context) {
     Widget playerCard(int n) {
       final name = players.getName(n);
+
+      Future<void> removePlayer() async {
+        if (onPlayersChanged == null) return;
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (d) => AlertDialog(
+            title: const Text('Verwijderen bevestigen'),
+            content: Text('Weet je zeker dat je "${players.getName(n)}" wilt verwijderen?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(d).pop(false), child: const Text('Nee')),
+              ElevatedButton(onPressed: () => Navigator.of(d).pop(true), child: const Text('Ja')),
+            ],
+          ),
+        );
+        if (ok != true) return;
+
+        final ordered = players.names.keys.toList()..sort();
+        final namesList = ordered.map((k) => players.names[k]!).toList();
+        final idx = n - 1;
+        if (idx < 0 || idx >= namesList.length) return;
+        namesList.removeAt(idx);
+        final updated = <int, String>{};
+        for (var i = 0; i < namesList.length; i++) {
+          updated[i + 1] = namesList[i];
+        }
+        onPlayersChanged!(TeamPlayers(names: updated));
+      }
 
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -38,13 +67,27 @@ class TeamPlayersColumns extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (onPlayersChanged != null) ...[
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                      onPressed: removePlayer,
+                      tooltip: 'Speler verwijderen',
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -111,26 +154,47 @@ class TeamPlayersColumns extends StatelessWidget {
       );
     }
 
-    final left = List.generate(8, (i) => i + 1);
-    final right = List.generate(8, (i) => i + 9);
+    final total = players.names.length;
+    const cols = 2;
+    final rows = (total + cols - 1) ~/ cols;
+
+    List<int> rowNumbers(int row) {
+      final first = row * cols + 1;
+      final second = first + 1;
+      final list = <int>[];
+      if (first <= total) list.add(first);
+      if (second <= total) list.add(second);
+      return list;
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 520) {
-          final all = List.generate(16, (i) => i + 1);
+          final all = List.generate(total, (i) => i + 1);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: all.map(playerCard).toList(),
           );
         }
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: Column(children: left.map(playerCard).toList())),
-            const SizedBox(width: 12),
-            Expanded(child: Column(children: right.map(playerCard).toList())),
-          ],
+        final rowWidgets = List<Widget>.generate(rows, (r) {
+          final nums = rowNumbers(r);
+          return Row(
+            children: [
+              Expanded(
+                child: nums.isNotEmpty ? playerCard(nums[0]) : const SizedBox.shrink(),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: nums.length > 1 ? playerCard(nums[1]) : const SizedBox.shrink(),
+              ),
+            ],
+          );
+        });
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: rowWidgets,
         );
       },
     );

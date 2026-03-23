@@ -300,18 +300,34 @@ class _HomePlayersPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                TextButton.icon(
-                  onPressed: () async {
-                    final updated = await showPlayerNameEditor(
-                      context,
-                      players,
-                    );
-                    if (updated != null) {
-                      onEditPlayers(updated);
-                    }
-                  },
-                  icon: const Icon(Icons.edit, size: 16),
-                  label: const Text('Bewerk namen'),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        final updated = players.addOne();
+                        onEditPlayers(updated);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Speler toegevoegd')),
+                        );
+                      },
+                      icon: const Icon(Icons.add),
+                      tooltip: 'Speler toevoegen',
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final updated = await showPlayerNameEditor(
+                          context,
+                          players,
+                        );
+                        if (updated != null) {
+                          onEditPlayers(updated);
+                        }
+                      },
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Bewerk namen'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -322,6 +338,7 @@ class _HomePlayersPanel extends StatelessWidget {
               onReboundPick: onReboundPick,
               onAssistPick: onAssistPick,
               onInterceptionPick: onInterceptionPick,
+              onPlayersChanged: (updated) => onEditPlayers(updated),
             ),
           ],
         ),
