@@ -12,7 +12,7 @@ import '../models/goal.dart';
 class PdfExporter {
   // Container scaling for the player cards in the PDF summary.
   static const double _containerScale = 1.0;
-  static const double _cardBaseWidth = 360.0;
+  static const double _cardBaseWidth = 520.0;
 
   // -------- Shared tuning constants --------
   static const double _ringGap = 0.0; // ruimte tussen de 3 ringen
