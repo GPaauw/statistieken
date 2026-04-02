@@ -31,10 +31,8 @@ flutter:
   # Material icons opnemen
   uses-material-design: true
 
-  # Voeg hier assets toe als je ze later gebruikt (icons, images, etc.)
-  # assets:
-  #   - assets/images/
-  #   - assets/icons/
+  assets:
+    - assets/fonts/MaterialIcons-Regular.otf
 
   # Voorbeeld fonts-sectie (optioneel)
   # fonts:
