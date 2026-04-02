@@ -58,8 +58,8 @@ class PdfExporter {
             theme: pw.ThemeData.withFont(icons: materialIcons),
           );
 
-    final homeName = homeTeamName ?? TeamNames.homeTeamName;
-    final awayName = awayTeamName ?? TeamNames.awayTeamName;
+    final homeName = _pdfSafe(homeTeamName ?? TeamNames.homeTeamName);
+    final awayName = _pdfSafe(awayTeamName ?? TeamNames.awayTeamName);
 
     String fmt2(int value) => value.toString().padLeft(2, '0');
     String fmtTime(int seconds) {
@@ -69,7 +69,7 @@ class PdfExporter {
     }
 
     String homePlayerName(Goal goal) =>
-        c.homePlayers.getName(goal.playerNumber);
+        _pdfSafe(c.homePlayers.getName(goal.playerNumber));
 
     String actionLabel(Goal goal) =>
         goal.team == Team.home ? 'Doelpunt' : 'Tegen';
@@ -205,7 +205,7 @@ class PdfExporter {
             height: _cardHeight,
             child: _playerCard(
               playerNumber: playerNumber,
-              playerName: c.homePlayers.getName(playerNumber),
+              playerName: _pdfSafe(c.homePlayers.getName(playerNumber)),
               showIcons: showIcons,
               goalsScored: c.goals
                   .where(
@@ -790,6 +790,14 @@ class PdfExporter {
           ),
         )
         .toList();
+  }
+
+  /// Strips characters outside the Latin-1 range (codepoints > 0xFF) so that
+  /// the default PDF font (Helvetica) never receives unsupported glyphs like emoji.
+  static String _pdfSafe(String text) {
+    return String.fromCharCodes(
+      text.runes.where((r) => r >= 0x20 && r <= 0xFF),
+    );
   }
 
   static Future<pw.Font?> _tryLoadMaterialIconsFont() async {
