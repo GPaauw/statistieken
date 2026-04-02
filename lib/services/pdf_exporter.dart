@@ -11,7 +11,7 @@ import '../models/match_event.dart';
 import 'team_names.dart';
 
 class PdfExporter {
-  static const double _cardHeight = 370.0;
+  static const double _cardHeight = 380.0;
   static const _shotGoalTypes = [
     GoalType.turnaround,
     GoalType.throughBall,
@@ -188,41 +188,55 @@ class PdfExporter {
     );
 
     final playerNumbers = c.homePlayers.names.keys.toList()..sort();
-    for (final playerNumber in playerNumbers) {
+
+    pw.Widget buildCard(int playerNumber) {
+      return pw.SizedBox(
+        height: _cardHeight,
+        child: _playerCard(
+          playerNumber: playerNumber,
+          playerName: _pdfSafe(c.homePlayers.getName(playerNumber)),
+          goalsScored: c.goals
+              .where(
+                (goal) =>
+                    goal.team == Team.home &&
+                    goal.playerNumber == playerNumber,
+              )
+              .toList(),
+          goalsConceded: c.goals
+              .where(
+                (goal) =>
+                    goal.team == Team.away &&
+                    goal.playerNumber == playerNumber,
+              )
+              .toList(),
+          missedShots: c.events
+              .where(
+                (event) =>
+                    event.type == PlayerEventType.shotMissed &&
+                    event.playerNumber == playerNumber,
+              )
+              .toList(),
+          reboundsWon: c.reboundWonByPlayer[playerNumber] ?? 0,
+          reboundsLost: c.reboundLostByPlayer[playerNumber] ?? 0,
+          assists: c.assistByPlayer[playerNumber] ?? 0,
+          interceptions: c.interceptionByPlayer[playerNumber] ?? 0,
+        ),
+      );
+    }
+
+    for (var i = 0; i < playerNumbers.length; i += 2) {
+      final p1 = playerNumbers[i];
+      final p2 = i + 1 < playerNumbers.length ? playerNumbers[i + 1] : null;
       doc.addPage(
         pw.Page(
           pageTheme: pageTheme,
-          build: (_) => pw.SizedBox(
-            height: _cardHeight,
-            child: _playerCard(
-              playerNumber: playerNumber,
-              playerName: _pdfSafe(c.homePlayers.getName(playerNumber)),
-              goalsScored: c.goals
-                  .where(
-                    (goal) =>
-                        goal.team == Team.home &&
-                        goal.playerNumber == playerNumber,
-                  )
-                  .toList(),
-              goalsConceded: c.goals
-                  .where(
-                    (goal) =>
-                        goal.team == Team.away &&
-                        goal.playerNumber == playerNumber,
-                  )
-                  .toList(),
-              missedShots: c.events
-                  .where(
-                    (event) =>
-                        event.type == PlayerEventType.shotMissed &&
-                        event.playerNumber == playerNumber,
-                  )
-                  .toList(),
-              reboundsWon: c.reboundWonByPlayer[playerNumber] ?? 0,
-              reboundsLost: c.reboundLostByPlayer[playerNumber] ?? 0,
-              assists: c.assistByPlayer[playerNumber] ?? 0,
-              interceptions: c.interceptionByPlayer[playerNumber] ?? 0,
-            ),
+          build: (_) => pw.Column(
+            mainAxisAlignment: pw.MainAxisAlignment.start,
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              buildCard(p1),
+              if (p2 != null) ...[pw.SizedBox(height: 8), buildCard(p2)],
+            ],
           ),
         ),
       );
@@ -322,44 +336,34 @@ class PdfExporter {
             ),
           ),
           pw.Expanded(
-            child: pw.Column(
+            child: pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
                 pw.Expanded(
-                  flex: 3,
-                  child: pw.Row(
+                  flex: 5,
+                  child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                     children: [
-                      pw.Expanded(
-                        flex: 5,
-                        child: _shotSection(shotStats),
-                      ),
-                      pw.Container(width: 1, color: _line),
-                      pw.Expanded(
-                        flex: 3,
-                        child: _rightSection(
-                          reboundsWon: reboundsWon,
-                          reboundsLost: reboundsLost,
-                          assists: assists,
-                          interceptions: interceptions,
-                        ),
-                      ),
+                      _shotSection(shotStats),
+                      pw.Container(height: 1, color: _line),
+                      _distanceBreakdown(distanceStats),
                     ],
                   ),
                 ),
-                pw.Container(height: 1, color: _line),
+                pw.Container(width: 1, color: _line),
                 pw.Expanded(
-                  flex: 2,
-                  child: pw.Row(
+                  flex: 3,
+                  child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                     children: [
-                      pw.Expanded(
-                        flex: 3,
-                        child: _distanceBreakdown(distanceStats),
+                      _rightSection(
+                        reboundsWon: reboundsWon,
+                        reboundsLost: reboundsLost,
+                        assists: assists,
+                        interceptions: interceptions,
                       ),
-                      pw.Expanded(
-                        flex: 4,
-                        child: _distanceChart(distanceStats),
-                      ),
+                      pw.Container(height: 1, color: _line),
+                      _distanceChart(distanceStats),
                     ],
                   ),
                 ),
@@ -510,35 +514,30 @@ class PdfExporter {
     );
 
     return pw.Padding(
-      padding: const pw.EdgeInsets.only(
-        left: 8,
-        right: 12,
-        top: 10,
-        bottom: 10,
-      ),
+      padding: const pw.EdgeInsets.all(8),
       child: pw.Center(
         child: pw.SizedBox(
-          width: 190,
-          height: 135,
+          width: 130,
+          height: 130,
           child: pw.Stack(
             alignment: pw.Alignment.center,
             children: [
-              _ringCircle(132, _zoneOuter),
-              _ringCircle(92, _zoneMiddle),
-              _ringCircle(48, _zoneInner),
+              _ringCircle(120, _zoneOuter),
+              _ringCircle(82, _zoneMiddle),
+              _ringCircle(44, _zoneInner),
               pw.Positioned(
-                left: 18,
-                top: 57,
+                left: 2,
+                top: 58,
                 child: _chartPercent(_formatPercent(outer.accuracy)),
               ),
               pw.Positioned(
-                left: 73,
-                top: 57,
+                left: 26,
+                top: 58,
                 child: _chartPercent(_formatPercent(middle.accuracy)),
               ),
               pw.Positioned(
-                left: 111,
-                top: 55,
+                left: 57,
+                top: 58,
                 child: _chartPercent(_formatPercent(inner.accuracy)),
               ),
             ],
@@ -640,7 +639,10 @@ class PdfExporter {
     return pw.Container(
       width: size,
       height: size,
-      decoration: pw.BoxDecoration(color: color, shape: pw.BoxShape.circle),
+      decoration: pw.BoxDecoration(
+        color: color,
+        borderRadius: pw.BorderRadius.circular(size / 2),
+      ),
     );
   }
 
