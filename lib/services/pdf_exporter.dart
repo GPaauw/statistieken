@@ -801,9 +801,20 @@ class PdfExporter {
   }
 
   static Future<pw.Font?> _tryLoadMaterialIconsFont() async {
+    // Try known Flutter framework bundle paths first (no network needed).
+    for (final path in const [
+      'packages/flutter/fonts/MaterialIcons-Regular.otf',
+      'fonts/MaterialIcons-Regular.otf',
+    ]) {
+      try {
+        final data = await rootBundle.load(path);
+        return pw.Font.ttf(data.buffer.asByteData());
+      } catch (_) {}
+    }
+    // Fall back to Google Fonts CDN (requires internet, 15 s timeout).
     try {
-      final data = await rootBundle.load('fonts/MaterialIcons-Regular.otf');
-      return pw.Font.ttf(data.buffer.asByteData());
+      return await PdfGoogleFonts.materialIcons()
+          .timeout(const Duration(seconds: 15));
     } catch (_) {
       return null;
     }
