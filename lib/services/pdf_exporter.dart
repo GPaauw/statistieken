@@ -656,7 +656,7 @@ class PdfExporter {
   static pw.Widget _miniBar(double progress, p.PdfColor accent) {
     return pw.LayoutBuilder(
       builder: (context, constraints) {
-        final barWidth = constraints.maxWidth;
+        final barWidth = constraints?.maxWidth ?? 0.0;
         return pw.Container(
           height: 10,
           decoration: pw.BoxDecoration(
@@ -666,7 +666,7 @@ class PdfExporter {
           child: pw.Align(
             alignment: pw.Alignment.centerLeft,
             child: pw.Container(
-              width: barWidth * progress.clamp(0.0, 1.0),
+              width: barWidth * progress.clamp(0.0, 1.0).toDouble(),
               decoration: pw.BoxDecoration(
                 color: accent,
                 borderRadius: pw.BorderRadius.circular(999),
