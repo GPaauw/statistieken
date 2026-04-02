@@ -37,7 +37,6 @@ class PdfExporter {
   static final _line = p.PdfColors.grey300;
   static final _zoneOuter = const p.PdfColor.fromInt(0xff09ba51);
   static final _zoneMiddle = const p.PdfColor.fromInt(0xff98d548);
-  static final _zoneInner = const p.PdfColor.fromInt(0xffd4efac);
 
   static Future<Uint8List> buildReport({
     required MatchController c,
@@ -294,6 +293,7 @@ class PdfExporter {
     );
     final distanceStats = _buildDistanceStats(
       goalsScored: goalsScored,
+      goalsConceded: goalsConceded,
       missedShots: missedShots,
     );
 
@@ -336,34 +336,44 @@ class PdfExporter {
             ),
           ),
           pw.Expanded(
-            child: pw.Row(
+            child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
                 pw.Expanded(
-                  flex: 5,
-                  child: pw.Column(
+                  child: pw.Row(
                     crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                     children: [
-                      _shotSection(shotStats),
-                      pw.Container(height: 1, color: _line),
-                      _distanceBreakdown(distanceStats),
+                      pw.Expanded(
+                        flex: 5,
+                        child: _shotSection(shotStats),
+                      ),
+                      pw.Container(width: 1, color: _line),
+                      pw.Expanded(
+                        flex: 3,
+                        child: _rightSection(
+                          reboundsWon: reboundsWon,
+                          reboundsLost: reboundsLost,
+                          assists: assists,
+                          interceptions: interceptions,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-                pw.Container(width: 1, color: _line),
+                pw.Container(height: 1, color: _line),
                 pw.Expanded(
-                  flex: 3,
-                  child: pw.Column(
+                  child: pw.Row(
                     crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                     children: [
-                      _rightSection(
-                        reboundsWon: reboundsWon,
-                        reboundsLost: reboundsLost,
-                        assists: assists,
-                        interceptions: interceptions,
+                      pw.Expanded(
+                        flex: 5,
+                        child: _distanceBreakdown(distanceStats),
                       ),
-                      pw.Container(height: 1, color: _line),
-                      _distanceChart(distanceStats),
+                      pw.Container(width: 1, color: _line),
+                      pw.Expanded(
+                        flex: 3,
+                        child: _distanceChart(distanceStats),
+                      ),
                     ],
                   ),
                 ),
@@ -504,46 +514,51 @@ class PdfExporter {
 
   static pw.Widget _distanceChart(List<_DistanceStats> distanceStats) {
     final outer = distanceStats.firstWhere(
-      (stat) => stat.type == GoalType.longRange7m,
+      (s) => s.type == GoalType.longRange7m,
     );
     final middle = distanceStats.firstWhere(
-      (stat) => stat.type == GoalType.midRange5m,
+      (s) => s.type == GoalType.midRange5m,
     );
     final inner = distanceStats.firstWhere(
-      (stat) => stat.type == GoalType.smallChance2m,
+      (s) => s.type == GoalType.smallChance2m,
     );
 
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(8),
-      child: pw.Center(
-        child: pw.SizedBox(
-          width: 130,
-          height: 130,
-          child: pw.Stack(
-            alignment: pw.Alignment.center,
-            children: [
-              _ringCircle(120, _zoneOuter),
-              _ringCircle(82, _zoneMiddle),
-              _ringCircle(44, _zoneInner),
-              pw.Positioned(
-                left: 2,
-                top: 58,
-                child: _chartPercent(_formatPercent(outer.accuracy)),
-              ),
-              pw.Positioned(
-                left: 26,
-                top: 58,
-                child: _chartPercent(_formatPercent(middle.accuracy)),
-              ),
-              pw.Positioned(
-                left: 57,
-                top: 58,
-                child: _chartPercent(_formatPercent(inner.accuracy)),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return pw.LayoutBuilder(
+      builder: (context, constraints) {
+        final double w = constraints!.maxWidth;
+        final double h = constraints.maxHeight;
+        final double r = ((h * 0.85).clamp(10.0, w * 0.46)).toDouble();
+        final lbl = pw.TextStyle(fontSize: 6, color: _muted);
+        final cnt = pw.TextStyle(
+          fontSize: 7,
+          fontWeight: pw.FontWeight.bold,
+          color: p.PdfColors.white,
+        );
+        return pw.Stack(
+          children: [
+            pw.CustomPaint(
+              painter: _QChartPainter(r: r, w: w).paint,
+              size: p.PdfPoint(w, h),
+            ),
+            // Left axis labels (7m / 5m / 2m)
+            pw.Positioned(left: 1, bottom: r - 5, child: pw.Text('7m', style: lbl)),
+            pw.Positioned(left: 1, bottom: r * 0.65 - 5, child: pw.Text('5m', style: lbl)),
+            pw.Positioned(left: 1, bottom: r * 0.35 - 5, child: pw.Text('2m', style: lbl)),
+            // Left count values inside zones
+            pw.Positioned(left: r * 0.70, bottom: r * 0.30, child: pw.Text('${outer.made}', style: cnt)),
+            pw.Positioned(left: r * 0.41, bottom: r * 0.20, child: pw.Text('${middle.made}', style: cnt)),
+            pw.Positioned(left: r * 0.13, bottom: r * 0.09, child: pw.Text('${inner.made}', style: cnt)),
+            // Right axis labels
+            pw.Positioned(right: 1, bottom: r - 5, child: pw.Text('7m', style: lbl)),
+            pw.Positioned(right: 1, bottom: r * 0.65 - 5, child: pw.Text('5m', style: lbl)),
+            pw.Positioned(right: 1, bottom: r * 0.35 - 5, child: pw.Text('2m', style: lbl)),
+            // Right count values inside zones
+            pw.Positioned(right: r * 0.70, bottom: r * 0.30, child: pw.Text('${outer.against}', style: cnt)),
+            pw.Positioned(right: r * 0.41, bottom: r * 0.20, child: pw.Text('${middle.against}', style: cnt)),
+            pw.Positioned(right: r * 0.13, bottom: r * 0.09, child: pw.Text('${inner.against}', style: cnt)),
+          ],
+        );
+      },
     );
   }
 
@@ -635,28 +650,6 @@ class PdfExporter {
     );
   }
 
-  static pw.Widget _ringCircle(double size, p.PdfColor color) {
-    return pw.Container(
-      width: size,
-      height: size,
-      decoration: pw.BoxDecoration(
-        color: color,
-        borderRadius: pw.BorderRadius.circular(size / 2),
-      ),
-    );
-  }
-
-  static pw.Widget _chartPercent(String text) {
-    return pw.Text(
-      text,
-      style: pw.TextStyle(
-        fontSize: 9,
-        fontWeight: pw.FontWeight.bold,
-        color: _ink,
-      ),
-    );
-  }
-
   static pw.Widget _sectionHeader(
     String text, {
     required p.PdfColor color,
@@ -742,6 +735,7 @@ class PdfExporter {
 
   static List<_DistanceStats> _buildDistanceStats({
     required List<Goal> goalsScored,
+    required List<Goal> goalsConceded,
     required List<PlayerEvent> missedShots,
   }) {
     return _distanceGoalTypes
@@ -749,6 +743,7 @@ class PdfExporter {
           (type) => _DistanceStats(
             type: type,
             made: goalsScored.where((goal) => goal.type == type).length,
+            against: goalsConceded.where((goal) => goal.type == type).length,
             missed: missedShots.where((event) => event.goalType == type).length,
           ),
         )
@@ -801,6 +796,59 @@ class PdfExporter {
   }
 }
 
+class _QChartPainter {
+  const _QChartPainter({required this.r, required this.w});
+
+  final double r;
+  final double w;
+
+  // Cubic bezier approximation constant for a quarter circle.
+  static const _k = 0.5522847498;
+
+  // Green shades: lightest (7m outer) → darkest (2m inner)
+  static const _g1 = p.PdfColor.fromInt(0xff99d44d);
+  static const _g2 = p.PdfColor.fromInt(0xff4ca800);
+  static const _g3 = p.PdfColor.fromInt(0xff1a6200);
+
+  // Red shades: lightest (7m outer) → darkest (2m inner)
+  static const _r1 = p.PdfColor.fromInt(0xffffb3b3);
+  static const _r2 = p.PdfColor.fromInt(0xffee5533);
+  static const _r3 = p.PdfColor.fromInt(0xffbb0000);
+
+  // Quarter circle with centre at bottom-left corner (PDF origin 0,0).
+  void _bl(p.PdfGraphics c, p.PdfColor color, double radius) {
+    c
+      ..setFillColor(color)
+      ..moveTo(0, 0)
+      ..lineTo(radius, 0)
+      ..curveTo(radius, _k * radius, _k * radius, radius, 0, radius)
+      ..closePath()
+      ..fillPath();
+  }
+
+  // Quarter circle with centre at bottom-right corner (PDF x = w, y = 0).
+  void _br(p.PdfGraphics c, p.PdfColor color, double radius) {
+    c
+      ..setFillColor(color)
+      ..moveTo(w, 0)
+      ..lineTo(w, radius)
+      ..curveTo(w - _k * radius, radius, w - radius, _k * radius, w - radius, 0)
+      ..closePath()
+      ..fillPath();
+  }
+
+  void paint(p.PdfGraphics canvas, p.PdfPoint size) {
+    // Draw largest sector first so smaller ones paint on top.
+    _bl(canvas, _g1, r);
+    _bl(canvas, _g2, r * 0.65);
+    _bl(canvas, _g3, r * 0.35);
+    _br(canvas, _r1, r);
+    _br(canvas, _r2, r * 0.65);
+    _br(canvas, _r3, r * 0.35);
+  }
+
+}
+
 class _ShotTypeStats {
   const _ShotTypeStats({
     required this.type,
@@ -823,11 +871,13 @@ class _DistanceStats {
   const _DistanceStats({
     required this.type,
     required this.made,
+    required this.against,
     required this.missed,
   });
 
   final GoalType type;
   final int made;
+  final int against;
   final int missed;
 
   int get attempts => made + missed;
