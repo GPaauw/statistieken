@@ -1,3 +1,4 @@
+import 'dart:math' show pi;
 import 'dart:typed_data';
 
 import 'package:intl/intl.dart';
@@ -528,7 +529,7 @@ class PdfExporter {
         final double w = constraints!.maxWidth;
         final double h = constraints.maxHeight;
         final double r = ((h * 0.85).clamp(10.0, w * 0.46)).toDouble();
-        final lbl = pw.TextStyle(fontSize: 6, color: _muted);
+        final lbl = pw.TextStyle(fontSize: 6, color: p.PdfColors.white);
         final cnt = pw.TextStyle(
           fontSize: 7,
           fontWeight: pw.FontWeight.bold,
@@ -541,21 +542,21 @@ class PdfExporter {
               size: p.PdfPoint(w, h),
             ),
             // Left axis labels (7m / 5m / 2m)
-            pw.Positioned(left: 1, bottom: r - 5, child: pw.Text('7m', style: lbl)),
-            pw.Positioned(left: 1, bottom: r * 0.65 - 5, child: pw.Text('5m', style: lbl)),
-            pw.Positioned(left: 1, bottom: r * 0.35 - 5, child: pw.Text('2m', style: lbl)),
+            pw.Positioned(left: 1, bottom: r - 9, child: pw.Text('7m', style: lbl)),
+            pw.Positioned(left: 1, bottom: r * 0.65 - 9, child: pw.Text('5m', style: lbl)),
+            pw.Positioned(left: 1, bottom: r * 0.35 - 9, child: pw.Text('2m', style: lbl)),
             // Left count values inside zones
-            pw.Positioned(left: r * 0.70, bottom: r * 0.30, child: pw.Text('${outer.made}', style: cnt)),
-            pw.Positioned(left: r * 0.41, bottom: r * 0.20, child: pw.Text('${middle.made}', style: cnt)),
-            pw.Positioned(left: r * 0.13, bottom: r * 0.09, child: pw.Text('${inner.made}', style: cnt)),
+            pw.Positioned(left: r * 0.70, bottom: r * 0.30, child: pw.Transform.rotate(angle: -pi / 4, child: pw.Text('${outer.made}', style: cnt))),
+            pw.Positioned(left: r * 0.41, bottom: r * 0.20, child: pw.Transform.rotate(angle: -pi / 4, child: pw.Text('${middle.made}', style: cnt))),
+            pw.Positioned(left: r * 0.13, bottom: r * 0.09, child: pw.Transform.rotate(angle: -pi / 4, child: pw.Text('${inner.made}', style: cnt))),
             // Right axis labels
-            pw.Positioned(right: 1, bottom: r - 5, child: pw.Text('7m', style: lbl)),
-            pw.Positioned(right: 1, bottom: r * 0.65 - 5, child: pw.Text('5m', style: lbl)),
-            pw.Positioned(right: 1, bottom: r * 0.35 - 5, child: pw.Text('2m', style: lbl)),
+            pw.Positioned(right: 1, bottom: r - 9, child: pw.Text('7m', style: lbl)),
+            pw.Positioned(right: 1, bottom: r * 0.65 - 9, child: pw.Text('5m', style: lbl)),
+            pw.Positioned(right: 1, bottom: r * 0.35 - 9, child: pw.Text('2m', style: lbl)),
             // Right count values inside zones
-            pw.Positioned(right: r * 0.70, bottom: r * 0.30, child: pw.Text('${outer.against}', style: cnt)),
-            pw.Positioned(right: r * 0.41, bottom: r * 0.20, child: pw.Text('${middle.against}', style: cnt)),
-            pw.Positioned(right: r * 0.13, bottom: r * 0.09, child: pw.Text('${inner.against}', style: cnt)),
+            pw.Positioned(right: r * 0.70, bottom: r * 0.30, child: pw.Transform.rotate(angle: pi / 4, child: pw.Text('${outer.against}', style: cnt))),
+            pw.Positioned(right: r * 0.41, bottom: r * 0.20, child: pw.Transform.rotate(angle: pi / 4, child: pw.Text('${middle.against}', style: cnt))),
+            pw.Positioned(right: r * 0.13, bottom: r * 0.09, child: pw.Transform.rotate(angle: pi / 4, child: pw.Text('${inner.against}', style: cnt))),
           ],
         );
       },
