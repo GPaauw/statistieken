@@ -49,11 +49,14 @@ class PdfExporter {
   }) async {
     final now = dateTime ?? DateTime.now();
     final doc = pw.Document();
-    final materialIcons = await _loadMaterialIconsFont();
-    final pageTheme = pw.PageTheme(
-      margin: const pw.EdgeInsets.all(24),
-      theme: pw.ThemeData.withFont(icons: materialIcons),
-    );
+    final materialIcons = await _tryLoadMaterialIconsFont();
+    final showIcons = materialIcons != null;
+    final pageTheme = materialIcons == null
+        ? const pw.PageTheme(margin: pw.EdgeInsets.all(24))
+        : pw.PageTheme(
+            margin: const pw.EdgeInsets.all(24),
+            theme: pw.ThemeData.withFont(icons: materialIcons),
+          );
 
     final homeName = homeTeamName ?? TeamNames.homeTeamName;
     final awayName = awayTeamName ?? TeamNames.awayTeamName;
@@ -203,6 +206,7 @@ class PdfExporter {
             child: _playerCard(
               playerNumber: playerNumber,
               playerName: c.homePlayers.getName(playerNumber),
+              showIcons: showIcons,
               goalsScored: c.goals
                   .where(
                     (goal) =>
@@ -245,15 +249,23 @@ class PdfExporter {
   }) async {
     final now = dateTime ?? DateTime.now();
     final formattedDate = DateFormat('dd-MM-yyyy').format(now);
+    final filename = 'wedstrijdverslag_$formattedDate.pdf';
     final bytes = await buildReport(
       c: c,
       homeTeamName: homeTeamName,
       awayTeamName: awayTeamName,
     );
-    await Printing.sharePdf(
+    final shared = await Printing.sharePdf(
       bytes: bytes,
-      filename: 'wedstrijdverslag_$formattedDate.pdf',
+      filename: filename,
     );
+    if (!shared) {
+      await Printing.layoutPdf(
+        name: filename,
+        dynamicLayout: false,
+        onLayout: (_) async => bytes,
+      );
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -263,6 +275,7 @@ class PdfExporter {
   static pw.Widget _playerCard({
     required int playerNumber,
     required String playerName,
+    required bool showIcons,
     required List<Goal> goalsScored,
     required List<Goal> goalsConceded,
     required List<PlayerEvent> missedShots,
@@ -327,11 +340,15 @@ class PdfExporter {
                   child: pw.Row(
                     crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                     children: [
-                      pw.Expanded(flex: 5, child: _shotSection(shotStats)),
+                      pw.Expanded(
+                        flex: 5,
+                        child: _shotSection(shotStats, showIcons: showIcons),
+                      ),
                       pw.Container(width: 1, color: _line),
                       pw.Expanded(
                         flex: 3,
                         child: _rightSection(
+                          showIcons: showIcons,
                           reboundsWon: reboundsWon,
                           reboundsLost: reboundsLost,
                           assists: assists,
@@ -370,7 +387,10 @@ class PdfExporter {
   // Left section: Doelpunten & schoten table
   // ---------------------------------------------------------------------------
 
-  static pw.Widget _shotSection(List<_ShotTypeStats> shotStats) {
+  static pw.Widget _shotSection(
+    List<_ShotTypeStats> shotStats, {
+    required bool showIcons,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(10),
       child: pw.Column(
@@ -389,7 +409,11 @@ class PdfExporter {
               pw.TableRow(
                 decoration: pw.BoxDecoration(color: _panel),
                 children: [
-                  _headerTitleCell('Doelpunten & schoten', _shotIcon, _shot),
+                  _headerTitleCell(
+                    'Doelpunten & schoten',
+                    color: _shot,
+                    icon: showIcons ? _shotIcon : null,
+                  ),
                   _headerSpacerCell(),
                   _headerSpacerCell(),
                   _headerSpacerCell(),
@@ -431,6 +455,7 @@ class PdfExporter {
   // ---------------------------------------------------------------------------
 
   static pw.Widget _rightSection({
+    required bool showIcons,
     required int reboundsWon,
     required int reboundsLost,
     required int assists,
@@ -444,7 +469,11 @@ class PdfExporter {
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Rebounds', _reboundIcon, _rebound),
+          _sectionHeader(
+            'Rebounds',
+            color: _rebound,
+            icon: showIcons ? _reboundIcon : null,
+          ),
           pw.SizedBox(height: 4),
           _miniStatRow(
             'Gewonnen',
@@ -454,11 +483,19 @@ class PdfExporter {
           ),
           _miniStatRow('Verloren', reboundsLost, _colorForNegativeCount),
           pw.SizedBox(height: 12),
-          _sectionHeader('Assists', _assistIcon, _assist),
+          _sectionHeader(
+            'Assists',
+            color: _assist,
+            icon: showIcons ? _assistIcon : null,
+          ),
           pw.SizedBox(height: 4),
           _miniStatRow('Assists', assists, _colorForSupportCount),
           pw.SizedBox(height: 12),
-          _sectionHeader('Onderscheppingen', _interceptionIcon, _interception),
+          _sectionHeader(
+            'Onderscheppingen',
+            color: _interception,
+            icon: showIcons ? _interceptionIcon : null,
+          ),
           pw.SizedBox(height: 4),
           _miniStatRow(
             'Onderscheppingen',
@@ -562,15 +599,15 @@ class PdfExporter {
   }
 
   static pw.Widget _headerTitleCell(
-    String text,
-    pw.IconData icon,
-    p.PdfColor color,
-  ) {
+    String text, {
+    required p.PdfColor color,
+    pw.IconData? icon,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
       child: pw.Row(
         children: [
-          pw.Icon(icon, size: 10, color: color),
+          _sectionMarker(color: color, size: 10, icon: icon),
           pw.SizedBox(width: 4),
           pw.Expanded(
             child: pw.Text(
@@ -652,13 +689,13 @@ class PdfExporter {
   }
 
   static pw.Widget _sectionHeader(
-    String text,
-    pw.IconData icon,
-    p.PdfColor color,
-  ) {
+    String text, {
+    required p.PdfColor color,
+    pw.IconData? icon,
+  }) {
     return pw.Row(
       children: [
-        pw.Icon(icon, size: 11, color: color),
+        _sectionMarker(color: color, size: 11, icon: icon),
         pw.SizedBox(width: 4),
         pw.Text(
           text,
@@ -669,6 +706,22 @@ class PdfExporter {
           ),
         ),
       ],
+    );
+  }
+
+  static pw.Widget _sectionMarker({
+    required p.PdfColor color,
+    required double size,
+    pw.IconData? icon,
+  }) {
+    if (icon != null) {
+      return pw.Icon(icon, size: size, color: color);
+    }
+
+    return pw.Container(
+      width: size - 2,
+      height: size - 2,
+      decoration: pw.BoxDecoration(color: color, shape: pw.BoxShape.circle),
     );
   }
 
@@ -739,12 +792,12 @@ class PdfExporter {
         .toList();
   }
 
-  static Future<pw.Font> _loadMaterialIconsFont() async {
+  static Future<pw.Font?> _tryLoadMaterialIconsFont() async {
     try {
       final data = await rootBundle.load('fonts/MaterialIcons-Regular.otf');
       return pw.Font.ttf(data.buffer.asByteData());
     } catch (_) {
-      return PdfGoogleFonts.materialIcons();
+      return null;
     }
   }
 

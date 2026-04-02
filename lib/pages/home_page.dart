@@ -71,11 +71,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _exportPdf() async {
-    await PdfExporter.shareReport(
-      c: _controller,
-      homeTeamName: TeamNames.homeTeamName,
-      awayTeamName: TeamNames.awayTeamName,
-    );
+    try {
+      await PdfExporter.shareReport(
+        c: _controller,
+        homeTeamName: TeamNames.homeTeamName,
+        awayTeamName: TeamNames.awayTeamName,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('PDF export mislukt: $error')));
+    }
   }
 
   Future<void> _pickTypeAndAddHomeGoal(int playerNumber) async {
