@@ -5,6 +5,7 @@ import 'goal.dart';
 enum PlayerEventType {
   goalFor,
   goalAgainst,
+  shotMissed,
   reboundWon,
   reboundLost,
   assist,
@@ -27,6 +28,9 @@ class PlayerEvent {
 
   bool get isGoal =>
       type == PlayerEventType.goalFor || type == PlayerEventType.goalAgainst;
+
+  bool get isShot =>
+      type == PlayerEventType.goalFor || type == PlayerEventType.shotMissed;
 
   String get formattedTime {
     final m = (secondStamp ~/ 60).toString().padLeft(2, '0');

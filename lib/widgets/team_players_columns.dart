@@ -5,7 +5,7 @@ import '../models/players.dart';
 /// Twee kolommen met thuisspelers en vier actieknoppen per speler.
 class TeamPlayersColumns extends StatelessWidget {
   final TeamPlayers players;
-  final void Function(int) onGoalPick;
+  final void Function(int) onShotPick;
   final void Function(int) onReboundPick;
   final void Function(int) onAssistPick;
   final void Function(int) onInterceptionPick;
@@ -14,7 +14,7 @@ class TeamPlayersColumns extends StatelessWidget {
   const TeamPlayersColumns({
     super.key,
     required this.players,
-    required this.onGoalPick,
+    required this.onShotPick,
     required this.onReboundPick,
     required this.onAssistPick,
     required this.onInterceptionPick,
@@ -32,10 +32,18 @@ class TeamPlayersColumns extends StatelessWidget {
           context: context,
           builder: (d) => AlertDialog(
             title: const Text('Verwijderen bevestigen'),
-            content: Text('Weet je zeker dat je "${players.getName(n)}" wilt verwijderen?'),
+            content: Text(
+              'Weet je zeker dat je "${players.getName(n)}" wilt verwijderen?',
+            ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(d).pop(false), child: const Text('Nee')),
-              ElevatedButton(onPressed: () => Navigator.of(d).pop(true), child: const Text('Ja')),
+              TextButton(
+                onPressed: () => Navigator.of(d).pop(false),
+                child: const Text('Nee'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(d).pop(true),
+                child: const Text('Ja'),
+              ),
             ],
           ),
         );
@@ -74,15 +82,18 @@ class TeamPlayersColumns extends StatelessWidget {
                       name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   if (onPlayersChanged != null) ...[
                     const SizedBox(width: 8),
                     IconButton(
-                      icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                      icon: const Icon(
+                        Icons.remove_circle_outline,
+                        color: Colors.red,
+                      ),
                       onPressed: removePlayer,
                       tooltip: 'Speler verwijderen',
                     ),
@@ -98,13 +109,13 @@ class TeamPlayersColumns extends StatelessWidget {
                     width: 140,
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.blue.shade700,
+                        backgroundColor: Colors.deepOrange.shade600,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
-                      onPressed: () => onGoalPick(n),
+                      onPressed: () => onShotPick(n),
                       icon: const Icon(Icons.sports_soccer, size: 18),
-                      label: const Text('Doelpunt'),
+                      label: const Text('Schot'),
                     ),
                   ),
                   SizedBox(
@@ -182,11 +193,15 @@ class TeamPlayersColumns extends StatelessWidget {
           return Row(
             children: [
               Expanded(
-                child: nums.isNotEmpty ? playerCard(nums[0]) : const SizedBox.shrink(),
+                child: nums.isNotEmpty
+                    ? playerCard(nums[0])
+                    : const SizedBox.shrink(),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: nums.length > 1 ? playerCard(nums[1]) : const SizedBox.shrink(),
+                child: nums.length > 1
+                    ? playerCard(nums[1])
+                    : const SizedBox.shrink(),
               ),
             ],
           );

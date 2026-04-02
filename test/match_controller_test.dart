@@ -63,6 +63,23 @@ void main() {
       expect(controller.reboundLostByPlayer[3], isNull);
     });
 
+    test('registreert gemist schot met type en undo werkt', () {
+      final controller = MatchController();
+
+      controller.addMissedShot(6, GoalType.midRange5m);
+
+      expect(controller.totalEventsCount, 1);
+      expect(controller.shotMissedByPlayer[6], 1);
+      expect(controller.events.single.type, PlayerEventType.shotMissed);
+      expect(controller.events.single.goalType, GoalType.midRange5m);
+
+      controller.undo();
+
+      expect(controller.totalEventsCount, 0);
+      expect(controller.shotMissedByPlayer[6], isNull);
+      expect(controller.events, isEmpty);
+    });
+
     test('tijdlijn-events blijven in invoervolgorde staan', () {
       final controller = MatchController();
 

@@ -1,24 +1,26 @@
-import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:pdf/widgets.dart' as pw;
-import 'package:pdf/pdf.dart' as p;
-import 'package:printing/printing.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart' as p;
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 import '../controllers/match_controller.dart';
 import '../models/goal.dart';
+import '../models/match_event.dart';
 import 'team_names.dart';
 
 class PdfExporter {
-  // Container scaling for the player cards in the PDF summary.
-  static const double _containerScale = 1.0;
   static const double _cardBaseWidth = 520.0;
+  static const double _cardHeight = 306.0;
 
-  // -------- Shared tuning constants --------
-  static const double _ringGap = 0.0; // ruimte tussen de 3 ringen
-  static const double _outsideGutter =
-      22.0; // ruimte tussen boog en buitenrand voor 2m/5m/7m labels
+  static final _good = p.PdfColors.green700;
+  static final _average = p.PdfColors.orange700;
+  static final _bad = p.PdfColors.red700;
+  static final _ink = p.PdfColors.grey900;
+  static final _muted = p.PdfColors.grey600;
+  static final _panel = p.PdfColors.grey100;
+  static final _line = p.PdfColors.grey300;
 
   static Future<Uint8List> buildReport({
     required MatchController c,
@@ -32,23 +34,37 @@ class PdfExporter {
     final homeName = homeTeamName ?? TeamNames.homeTeamName;
     final awayName = awayTeamName ?? TeamNames.awayTeamName;
 
-    String fmt2(int v) => v.toString().padLeft(2, '0');
+    String fmt2(int value) => value.toString().padLeft(2, '0');
     String fmtTime(int seconds) {
-      final m = seconds ~/ 60;
-      final s = seconds % 60;
-      return '${fmt2(m)}:${fmt2(s)}';
+      final minutes = seconds ~/ 60;
+      final remainder = seconds % 60;
+      return '${fmt2(minutes)}:${fmt2(remainder)}';
     }
 
-    String homePlayerName(Goal g) => c.homePlayers.getName(g.playerNumber);
+    String homePlayerName(Goal goal) =>
+        c.homePlayers.getName(goal.playerNumber);
 
-    String actionLabel(Goal g) => g.team == Team.home ? 'Doelpunt' : 'Tegen';
+    String actionLabel(Goal goal) =>
+        goal.team == Team.home ? 'Doelpunt' : 'Tegen';
 
     final headerStyle = pw.TextStyle(
       fontSize: 22,
       fontWeight: pw.FontWeight.bold,
+      color: _ink,
     );
-    final h2 = pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold);
-    final cell = pw.TextStyle(fontSize: 11);
+    final sectionTitle = pw.TextStyle(
+      fontSize: 14,
+      fontWeight: pw.FontWeight.bold,
+      color: _ink,
+    );
+    final cell = pw.TextStyle(fontSize: 11, color: _ink);
+
+    final totalMissedShots = c.shotMissedByPlayer.values.fold<int>(
+      0,
+      (sum, value) => sum + value,
+    );
+    final totalShots = c.homeScore + totalMissedShots;
+    final teamEfficiency = totalShots == 0 ? 0.0 : c.homeScore / totalShots;
 
     doc.addPage(
       pw.MultiPage(
@@ -58,97 +74,163 @@ class PdfExporter {
           pw.SizedBox(height: 4),
           pw.Text(
             '${fmt2(now.day)}-${fmt2(now.month)}-${now.year} ${fmt2(now.hour)}:${fmt2(now.minute)}',
-            style: pw.TextStyle(color: p.PdfColors.grey600),
+            style: pw.TextStyle(color: _muted),
           ),
           pw.SizedBox(height: 16),
-
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text('$homeName vs $awayName', style: h2),
-              pw.Text('Score: ${c.homeScore} - ${c.awayScore}', style: h2),
+              pw.Text('$homeName vs $awayName', style: sectionTitle),
+              pw.Text(
+                'Score: ${c.homeScore} - ${c.awayScore}',
+                style: sectionTitle,
+              ),
             ],
           ),
           pw.SizedBox(height: 12),
-
-          pw.TableHelper.fromTextArray(
-            headerStyle: pw.TextStyle(
-              fontSize: 12,
-              fontWeight: pw.FontWeight.bold,
-            ),
-            headerDecoration: pw.BoxDecoration(color: p.PdfColors.red600),
-            cellStyle: cell,
-            headers: ['Tijd', 'Team', 'Thuisspeler', 'Actie', 'Type', 'Stand'],
-            data: () {
-              final rows = <List<String>>[];
-              int home = 0, away = 0;
-              for (final g in c.goals) {
-                if (g.team == Team.home) {
-                  home++;
-                } else {
-                  away++;
+          if (c.goals.isEmpty)
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.all(16),
+              decoration: pw.BoxDecoration(
+                color: _panel,
+                borderRadius: pw.BorderRadius.circular(8),
+                border: pw.Border.all(color: _line),
+              ),
+              child: pw.Text(
+                'Nog geen doelpuntmomenten geregistreerd.',
+                style: pw.TextStyle(color: _muted),
+              ),
+            )
+          else
+            pw.TableHelper.fromTextArray(
+              headerStyle: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+                color: p.PdfColors.white,
+              ),
+              headerDecoration: pw.BoxDecoration(color: _bad),
+              cellStyle: cell,
+              headers: [
+                'Tijd',
+                'Team',
+                'Thuisspeler',
+                'Actie',
+                'Type',
+                'Stand',
+              ],
+              data: () {
+                final rows = <List<String>>[];
+                var homeScore = 0;
+                var awayScore = 0;
+                for (final goal in c.goals) {
+                  if (goal.team == Team.home) {
+                    homeScore++;
+                  } else {
+                    awayScore++;
+                  }
+                  rows.add([
+                    fmtTime(goal.secondStamp),
+                    goal.team == Team.home ? homeName : awayName,
+                    homePlayerName(goal),
+                    actionLabel(goal),
+                    goal.type.label,
+                    '$homeScore - $awayScore',
+                  ]);
                 }
-                rows.add([
-                  fmtTime(g.secondStamp),
-                  g.team == Team.home ? homeName : awayName,
-                  homePlayerName(g),
-                  actionLabel(g),
-                  g.type.label,
-                  '$home - $away',
-                ]);
-              }
-              return rows;
-            }(),
-            border: null,
-            columnWidths: {
-              0: const pw.FlexColumnWidth(1),
-              1: const pw.FlexColumnWidth(2.2),
-              2: const pw.FlexColumnWidth(2.2),
-              3: const pw.FlexColumnWidth(1.4),
-              4: const pw.FlexColumnWidth(1.8),
-              5: const pw.FlexColumnWidth(1),
-            },
-          ),
-
+                return rows;
+              }(),
+              border: null,
+              columnWidths: {
+                0: const pw.FlexColumnWidth(1),
+                1: const pw.FlexColumnWidth(2.2),
+                2: const pw.FlexColumnWidth(2.2),
+                3: const pw.FlexColumnWidth(1.4),
+                4: const pw.FlexColumnWidth(1.8),
+                5: const pw.FlexColumnWidth(1),
+              },
+            ),
           pw.SizedBox(height: 16),
-          pw.Text('Samenvatting', style: h2),
+          pw.Text('Samenvatting', style: sectionTitle),
           pw.SizedBox(height: 6),
           pw.Bullet(text: 'Totale speeltijd: ${fmtTime(c.elapsedSeconds)}'),
-          pw.Bullet(text: 'Totaal geregistreerde momenten: ${c.goals.length}'),
+          pw.Bullet(
+            text: 'Totaal geregistreerde acties: ${c.totalEventsCount}',
+          ),
+          pw.Bullet(text: 'Doelpuntmomenten: ${c.goals.length}'),
+          pw.Bullet(
+            text:
+                'Thuisschoten: $totalShots, doelpunten: ${c.homeScore}, rendement: ${_formatPercent(teamEfficiency)}',
+          ),
           pw.Bullet(
             text: '$homeName: ${c.homeScore} | $awayName: ${c.awayScore}',
-          ),
-
-          pw.SizedBox(height: 12),
-          pw.Text('Spelerssamenvatting (' + homeName + ')', style: h2),
-          pw.SizedBox(height: 6),
-
-          pw.Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              for (final n in (c.homePlayers.names.keys.toList()..sort()))
-                _playerCard(
-                  playerNumber: n,
-                  playerName: c.homePlayers.getName(n),
-                  goalsScored: c.goals
-                      .where((g) => g.team == Team.home && g.playerNumber == n)
-                      .toList(),
-                  goalsConceded: c.goals
-                      .where((g) => g.team == Team.away && g.playerNumber == n)
-                      .toList(),
-                  reboundsWon: c.reboundWonByPlayer[n] ?? 0,
-                  reboundsLost: c.reboundLostByPlayer[n] ?? 0,
-                  assists: c.assistByPlayer[n] ?? 0,
-                  interceptions: c.interceptionByPlayer[n] ?? 0,
-                  cardWidth: _cardBaseWidth * _containerScale,
-                  containerScale: _containerScale,
-                ),
-            ],
           ),
         ],
       ),
     );
+
+    final playerNumbers = c.homePlayers.names.keys.toList()..sort();
+    for (var index = 0; index < playerNumbers.length; index += 2) {
+      final pagePlayers = playerNumbers.skip(index).take(2).toList();
+      doc.addPage(
+        pw.Page(
+          pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
+          build: (_) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              pw.Text('Spelerssamenvatting ($homeName)', style: headerStyle),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                'Sportief profiel met aantallen, rendement en statuskleur.',
+                style: pw.TextStyle(color: _muted, fontSize: 10),
+              ),
+              pw.SizedBox(height: 14),
+              for (
+                var pageIndex = 0;
+                pageIndex < pagePlayers.length;
+                pageIndex++
+              ) ...[
+                _playerCard(
+                  playerNumber: pagePlayers[pageIndex],
+                  playerName: c.homePlayers.getName(pagePlayers[pageIndex]),
+                  goalsScored: c.goals
+                      .where(
+                        (goal) =>
+                            goal.team == Team.home &&
+                            goal.playerNumber == pagePlayers[pageIndex],
+                      )
+                      .toList(),
+                  goalsConceded: c.goals
+                      .where(
+                        (goal) =>
+                            goal.team == Team.away &&
+                            goal.playerNumber == pagePlayers[pageIndex],
+                      )
+                      .toList(),
+                  missedShots: c.events
+                      .where(
+                        (event) =>
+                            event.type == PlayerEventType.shotMissed &&
+                            event.playerNumber == pagePlayers[pageIndex],
+                      )
+                      .toList(),
+                  reboundsWon:
+                      c.reboundWonByPlayer[pagePlayers[pageIndex]] ?? 0,
+                  reboundsLost:
+                      c.reboundLostByPlayer[pagePlayers[pageIndex]] ?? 0,
+                  assists: c.assistByPlayer[pagePlayers[pageIndex]] ?? 0,
+                  interceptions:
+                      c.interceptionByPlayer[pagePlayers[pageIndex]] ?? 0,
+                  cardWidth: _cardBaseWidth,
+                ),
+                if (pageIndex != pagePlayers.length - 1)
+                  pw.SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
 
     return doc.save();
   }
@@ -172,580 +254,238 @@ class PdfExporter {
     );
   }
 
-  // ------------- Bars, labels, and counts -------------
-  static const _barHeight = 14.0;
-  static const _barRadius = 4.0;
-  static const _barGap = 6.0;
-
-  static final _green = p.PdfColors.green600;
-  static final _greenBack = p.PdfColors.green300;
-  static final _red = p.PdfColors.red600;
-  static final _redBack = p.PdfColors.red300;
-
-  static bool _isDistanceType(GoalType t) {
-    final lbl = t.label.toLowerCase();
-    return lbl.contains('7m') || lbl.contains('5m') || lbl.contains('2m');
-  }
-
-  static List<GoalType> _nonDistanceTypes() {
-    final list = <GoalType>[];
-    for (final t in GoalType.values) {
-      if (!_isDistanceType(t)) list.add(t);
-    }
-    list.sort((a, b) => a.label.compareTo(b.label));
-    return list;
-  }
-
-  static Map<GoalType, int> _countByType(Iterable<Goal> goals) {
-    final map = <GoalType, int>{};
-    for (final t in GoalType.values) {
-      map[t] = 0;
-    }
-    for (final g in goals) {
-      map[g.type] = (map[g.type] ?? 0) + 1;
-    }
-    return map;
-  }
-
-  static pw.Widget _barRow({
-    required int value,
-    required int maxValue,
-    required double maxWidth,
-    required p.PdfColor fill,
-    required p.PdfColor fillBack,
-  }) {
-    final frac = maxValue <= 0 ? 0 : value / maxValue;
-    final barW = (frac * maxWidth).clamp(0.0, maxWidth);
-
-    return pw.Container(
-      height: _barHeight,
-      decoration: pw.BoxDecoration(
-        color: fillBack,
-        borderRadius: pw.BorderRadius.circular(_barRadius),
-      ),
-      child: pw.Stack(
-        children: [
-          pw.Positioned.fill(
-            child: pw.Align(
-              alignment: pw.Alignment.centerLeft,
-              child: pw.Container(
-                width: barW,
-                decoration: pw.BoxDecoration(
-                  color: fill,
-                  borderRadius: pw.BorderRadius.circular(_barRadius),
-                ),
-              ),
-            ),
-          ),
-          pw.Center(
-            child: pw.Text(
-              value.toString(),
-              style: pw.TextStyle(
-                color: p.PdfColors.white,
-                fontWeight: pw.FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _barList({
-    required Map<GoalType, int> counts,
-    required List<GoalType> typesOrder,
-    required p.PdfColor fill,
-    required p.PdfColor fillBack,
-    required double maxWidth,
-  }) {
-    final values = [for (final t in typesOrder) counts[t] ?? 0];
-    final maxValue = values.isEmpty ? 0 : values.reduce(math.max);
-
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-      children: [
-        for (int i = 0; i < typesOrder.length; i++) ...[
-          _barRow(
-            value: values[i],
-            maxValue: maxValue,
-            maxWidth: maxWidth,
-            fill: fill,
-            fillBack: fillBack,
-          ),
-          if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
-        ],
-      ],
-    );
-  }
-
-  static pw.Widget _labelList({required List<GoalType> typesOrder}) {
-    return pw.Column(
-      crossAxisAlignment:
-          pw.CrossAxisAlignment.center, // gecentreerd binnen de kolom
-      children: [
-        for (int i = 0; i < typesOrder.length; i++) ...[
-          pw.Text(
-            typesOrder[i].label,
-            style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
-          ),
-          if (i != typesOrder.length - 1) pw.SizedBox(height: _barGap),
-        ],
-      ],
-    );
-  }
-
-  // ------------- Distances and heatmap helpers -------------
-  static Map<String, int> _distanceCounts(List<Goal> goals) {
-    int c2 = 0, c5 = 0, c7 = 0;
-    for (final g in goals) {
-      final lbl = g.type.label.toLowerCase();
-      if (lbl.contains('2m')) c2++;
-      if (lbl.contains('5m')) c5++;
-      if (lbl.contains('7m')) c7++;
-    }
-    return {'7m': c7, '5m': c5, '2m': c2};
-  }
-
-  static p.PdfColor _lerpColor(p.PdfColor a, p.PdfColor b, double t) {
-    t = t.clamp(0, 1);
-    return p.PdfColor(
-      a.red + (b.red - a.red) * t,
-      a.green + (b.green - a.green) * t,
-      a.blue + (b.blue - a.blue) * t,
-    );
-  }
-
-  // Ring overlay numbers (with optional dx offset when drawing area is shifted)
-  static pw.Widget _ringNumberOverlayQuarter({
-    required bool rightSide,
-    required double width,
-    required double height,
-    required int ringIndex,
-    required int value,
-    double dx = 0, // horizontal shift of drawing origin
-  }) {
-    const ringCount = 3;
-    const ringGap = _ringGap; // gebruik dezelfde gap als in de painter
-    final outerR = height;
-    final ringWidth = (height - (ringGap * (ringCount - 1))) / ringCount;
-    final rOuter = outerR - ringIndex * (ringWidth + ringGap);
-    final rMid = rOuter - ringWidth / 2;
-
-    final cx = rightSide ? width : 0.0;
-    final cy = 0.0;
-    final angle = rightSide ? (3 * math.pi / 4) : (math.pi / 4);
-    final tx = cx + rMid * math.cos(angle);
-    final ty = cy + rMid * math.sin(angle);
-
-    final left =
-        dx + tx - 7; // apply dx so numbers align after shifting draw area
-    final top = height - ty - 7;
-
-    return pw.Positioned(
-      left: left,
-      top: top,
-      child: pw.Container(
-        width: 14,
-        height: 14,
-        alignment: pw.Alignment.center,
-        child: pw.Text(
-          value.toString(),
-          style: pw.TextStyle(
-            fontSize: 11,
-            fontWeight: pw.FontWeight.bold,
-            color: p.PdfColors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  static pw.Widget _distanceQuarterSection({
-    required List<Goal> goalsScored,
-    required List<Goal> goalsConceded,
-    required double height,
-    required double leftWidth,
-    required double middleGapWidth,
-    required double rightWidth,
-  }) {
-    final left = _distanceCounts(goalsScored);
-    final right = _distanceCounts(goalsConceded);
-
-    final maxLeft = math.max(left['2m']!, math.max(left['5m']!, left['7m']!));
-    final maxRight = math.max(
-      right['2m']!,
-      math.max(right['5m']!, right['7m']!),
-    );
-
-    // We tekenen met een kleine gutter aan de BUITENZIJDES, zodat de labels zichtbaar zijn.
-    const double outsideGutter = _outsideGutter;
-
-    pw.Widget quarter({
-      required bool rightSide,
-      required Map<String, int> values,
-      required p.PdfColor baseColor,
-      required int maxValue,
-      required double width,
-    }) {
-      final shades = [
-        _lerpColor(baseColor, p.PdfColors.white, 0.55),
-        _lerpColor(baseColor, p.PdfColors.white, 0.35),
-        baseColor,
-      ];
-      final seq = [values['7m']!, values['5m']!, values['2m']!];
-
-      // Tekenbreedte: volledige breedte minus gutter aan buitenzijde
-      final double drawDx = rightSide
-          ? 0.0
-          : outsideGutter; // links schuiven we het tekengebied iets naar rechts
-      final double drawW = width - outsideGutter;
-
-      return pw.Container(
-        width: width,
-        height: height,
-        child: pw.Stack(
-          children: [
-            // Tekengebied (de arcs)
-            pw.Positioned(
-              left: drawDx,
-              right: rightSide ? outsideGutter : 0,
-              top: 0,
-              bottom: 0,
-              child: pw.ClipRect(
-                child: pw.CustomPaint(
-                  size: p.PdfPoint(drawW, height),
-                  painter: (p.PdfGraphics canvas, p.PdfPoint size) {
-                    final cx = rightSide ? size.x : 0.0;
-                    const ringGap = _ringGap;
-                    final outerR = size.y;
-                    final ringWidth = (size.y - (ringGap * 2)) / 3;
-
-                    for (int i = 0; i < 3; i++) {
-                      final rOuter = outerR - i * (ringWidth + ringGap);
-                      final rInner = rOuter - ringWidth;
-                      final t = maxValue == 0 ? 0 : seq[i] / maxValue;
-                      final col = _lerpColor(shades[i], baseColor, t * 0.6);
-
-                      canvas
-                        ..setFillColor(col)
-                        ..drawEllipse(cx, 0, rOuter, rOuter)
-                        ..fillPath();
-
-                      canvas
-                        ..setFillColor(p.PdfColors.white)
-                        ..drawEllipse(cx, 0, rInner, rInner)
-                        ..fillPath();
-                    }
-                  },
-                ),
-              ),
-            ),
-
-            // Cijfers op ringen (gecorrigeerd met drawDx)
-            _ringNumberOverlayQuarter(
-              rightSide: rightSide,
-              width: drawW,
-              height: height,
-              ringIndex: 0,
-              value: seq[0],
-              dx: drawDx,
-            ),
-            _ringNumberOverlayQuarter(
-              rightSide: rightSide,
-              width: drawW,
-              height: height,
-              ringIndex: 1,
-              value: seq[1],
-              dx: drawDx,
-            ),
-            _ringNumberOverlayQuarter(
-              rightSide: rightSide,
-              width: drawW,
-              height: height,
-              ringIndex: 2,
-              value: seq[2],
-              dx: drawDx,
-            ),
-
-            // 2m/5m/7m labels in de buiten-gutter, goed zichtbaar
-            if (!rightSide) ...[
-              pw.Positioned(
-                left: 2,
-                bottom: height * .10,
-                child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12)),
-              ),
-              pw.Positioned(
-                left: 2,
-                bottom: height * .45,
-                child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12)),
-              ),
-              pw.Positioned(
-                left: 2,
-                bottom: height * .80,
-                child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12)),
-              ),
-            ] else ...[
-              pw.Positioned(
-                right: 2,
-                bottom: height * .10,
-                child: pw.Text('2m', style: const pw.TextStyle(fontSize: 12)),
-              ),
-              pw.Positioned(
-                right: 2,
-                bottom: height * .45,
-                child: pw.Text('5m', style: const pw.TextStyle(fontSize: 12)),
-              ),
-              pw.Positioned(
-                right: 2,
-                bottom: height * .80,
-                child: pw.Text('7m', style: const pw.TextStyle(fontSize: 12)),
-              ),
-            ],
-          ],
-        ),
-      );
-    }
-
-    return pw.SizedBox(
-      height: height,
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.end,
-        children: [
-          pw.SizedBox(
-            width: leftWidth,
-            child: quarter(
-              rightSide: false,
-              values: left,
-              baseColor: _green,
-              maxValue: maxLeft,
-              width: leftWidth,
-            ),
-          ),
-          if (middleGapWidth > 0) pw.SizedBox(width: middleGapWidth),
-          pw.Spacer(), // duwt de rechter kwart naar de uiterste rechterzijde van de rij
-          pw.SizedBox(
-            width: rightWidth,
-            child: quarter(
-              rightSide: true,
-              values: right,
-              baseColor: _red,
-              maxValue: maxRight,
-              width: rightWidth,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static double _barsBlockHeight(int itemCount) => itemCount <= 0
-      ? _barHeight
-      : itemCount * _barHeight + (itemCount - 1) * _barGap;
-
-  // Player card (container scaled; heatmap not scaled; quarter-circles pinned to bottom)
   static pw.Widget _playerCard({
     required int playerNumber,
     required String playerName,
     required List<Goal> goalsScored,
     required List<Goal> goalsConceded,
+    required List<PlayerEvent> missedShots,
     required int reboundsWon,
     required int reboundsLost,
     required int assists,
     required int interceptions,
-    double cardWidth = _cardBaseWidth,
-    double containerScale = 1.0,
+    required double cardWidth,
   }) {
-    final typesOrder = _nonDistanceTypes();
-    final scoredCounts = _countByType(goalsScored);
-    final concededCounts = _countByType(goalsConceded);
+    final totalShots = goalsScored.length + missedShots.length;
+    final efficiency = totalShots == 0 ? 0.0 : goalsScored.length / totalShots;
+    final netScore = goalsScored.length - goalsConceded.length;
+    final reboundBalance = reboundsWon - reboundsLost;
+    final teamPlay = assists + interceptions + reboundsWon;
 
-    const horizontalPad = 10.0;
-    const verticalPad = 6.0;
-    const colGap = 10.0;
+    final finishingScore = _scoreForEfficiency(efficiency);
+    final defenseScore = _scoreForConceded(goalsConceded.length);
+    final teamPlayScore = _scoreForTeamPlay(teamPlay);
+    final overallScore = (finishingScore + defenseScore + teamPlayScore) / 3;
+    final statusColor = _colorForScore(overallScore);
+    final statusLabel = _labelForScore(overallScore);
 
-    final innerWidth = cardWidth - 2 * horizontalPad;
-    final availableWidth = innerWidth - 2 * colGap;
-    final colLeftWidth = availableWidth * 0.37;
-    final colCenterWidth = availableWidth * 0.26;
-    final colRightWidth = availableWidth * 0.37;
-    final reboundMaxValue = math.max(1, math.max(reboundsWon, reboundsLost));
-
-    final barsHeight = _barsBlockHeight(typesOrder.length);
-    const reboundBarsHeight = _barHeight;
-    const circlesHeight = 112.0;
-    final heatmapHeight = math.max(
-      88.0,
-      barsHeight,
-    );
-
-    const double titleRowEstimate = 20.0;
-    final double baseHeight =
-        (2 * verticalPad) +
-        titleRowEstimate +
-        4 +
-        barsHeight +
-        12 +
-        reboundBarsHeight +
-        34 +
-        circlesHeight +
-        8 +
-        heatmapHeight;
-    final double containerHeight = baseHeight * containerScale;
+    final buckets = _buildShotBuckets(goalsScored, missedShots);
 
     return pw.Container(
       width: cardWidth,
-      height: containerHeight,
-      padding: const pw.EdgeInsets.symmetric(
-        horizontal: horizontalPad,
-        vertical: verticalPad,
-      ),
+      height: _cardHeight,
       decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: p.PdfColors.grey600, width: 0.8),
-        borderRadius: pw.BorderRadius.circular(6),
+        color: p.PdfColors.white,
+        borderRadius: pw.BorderRadius.circular(16),
+        border: pw.Border.all(color: _line),
       ),
       child: pw.Column(
-        mainAxisSize: pw.MainAxisSize.max,
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
-          // Titelrij: links/center/rechts (midden exact gecentreerd)
-          pw.Row(
-            children: [
-              pw.Expanded(
-                child: pw.Align(
-                  alignment: pw.Alignment.centerLeft,
-                  child: pw.Text(
-                    'Doelpunten',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                      color: _green,
-                    ),
-                  ),
-                ),
+          pw.Container(
+            height: 8,
+            decoration: pw.BoxDecoration(
+              color: statusColor,
+              borderRadius: const pw.BorderRadius.only(
+                topLeft: pw.Radius.circular(16),
+                topRight: pw.Radius.circular(16),
               ),
-              pw.Expanded(
-                child: pw.Center(
-                  child: pw.Text(
-                    playerName,
-                    style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              pw.Expanded(
-                child: pw.Align(
-                  alignment: pw.Alignment.centerRight,
-                  child: pw.Text(
-                    'Tegendoelpunten',
-                    style: pw.TextStyle(
-                      fontSize: 12,
-                      fontWeight: pw.FontWeight.bold,
-                      color: _red,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-          pw.SizedBox(height: 4),
-
-          // Bars + labels (middelste kolom labels blijven gecentreerd)
-          pw.Row(
-            children: [
-              pw.Container(
-                width: colLeftWidth,
-                child: _barList(
-                  counts: scoredCounts,
-                  typesOrder: typesOrder,
-                  fill: _green,
-                  fillBack: _greenBack,
-                  maxWidth: colLeftWidth,
+          pw.Padding(
+            padding: const pw.EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              children: [
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: pw.BoxDecoration(
+                        color: _softFill(statusColor),
+                        borderRadius: pw.BorderRadius.circular(999),
+                      ),
+                      child: pw.Text(
+                        '#$playerNumber',
+                        style: pw.TextStyle(
+                          color: statusColor,
+                          fontWeight: pw.FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(width: 10),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            playerName.toUpperCase(),
+                            maxLines: 1,
+                            style: pw.TextStyle(
+                              fontSize: 18,
+                              fontWeight: pw.FontWeight.bold,
+                              color: _ink,
+                            ),
+                          ),
+                          pw.SizedBox(height: 2),
+                          pw.Text(
+                            'Spelerskaart',
+                            style: pw.TextStyle(fontSize: 10, color: _muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.Container(
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: pw.BoxDecoration(
+                        color: statusColor,
+                        borderRadius: pw.BorderRadius.circular(999),
+                      ),
+                      child: pw.Text(
+                        statusLabel,
+                        style: pw.TextStyle(
+                          color: p.PdfColors.white,
+                          fontSize: 10,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              pw.SizedBox(width: colGap),
-              pw.Container(
-                width: colCenterWidth,
-                child: _labelList(typesOrder: typesOrder),
-              ),
-              pw.SizedBox(width: colGap),
-              pw.Container(
-                width: colRightWidth,
-                child: _barList(
-                  counts: concededCounts,
-                  typesOrder: typesOrder,
-                  fill: _red,
-                  fillBack: _redBack,
-                  maxWidth: colRightWidth,
+                pw.SizedBox(height: 12),
+                pw.Row(
+                  children: [
+                    pw.Expanded(
+                      child: _metricTile(
+                        label: 'Schoten',
+                        value: '$totalShots',
+                        detail:
+                            '${goalsScored.length} doelpunt / ${missedShots.length} gemist',
+                        accent: totalShots == 0 ? _muted : _average,
+                      ),
+                    ),
+                    pw.SizedBox(width: 10),
+                    pw.Expanded(
+                      child: _metricTile(
+                        label: 'Rendement',
+                        value: _formatPercent(efficiency),
+                        detail: totalShots == 0
+                            ? 'Geen schoten'
+                            : '${goalsScored.length}/$totalShots raak',
+                        accent: _colorForScore(finishingScore),
+                      ),
+                    ),
+                    pw.SizedBox(width: 10),
+                    pw.Expanded(
+                      child: _metricTile(
+                        label: 'Netto',
+                        value: _signed(netScore),
+                        detail:
+                            '${goalsScored.length} voor / ${goalsConceded.length} tegen',
+                        accent: _colorForNet(netScore),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-
-          pw.SizedBox(height: 12),
-
-          pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.center,
-            children: [
-              pw.Container(
-                width: colLeftWidth,
-                child: _barRow(
-                  value: reboundsWon,
-                  maxValue: reboundMaxValue,
-                  maxWidth: colLeftWidth,
-                  fill: _green,
-                  fillBack: _greenBack,
+                pw.SizedBox(height: 12),
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Expanded(
+                      child: _sectionCard(
+                        title: 'Aanval',
+                        accent: _colorForScore(finishingScore),
+                        rows: [
+                          _statLine(
+                            label: 'Doelpunt voor',
+                            value: '${goalsScored.length}',
+                            accent: _good,
+                          ),
+                          _statLine(
+                            label: 'Schot gemist',
+                            value: '${missedShots.length}',
+                            accent: _average,
+                          ),
+                          _statLine(
+                            label: 'Doelpunt tegen',
+                            value: '${goalsConceded.length}',
+                            accent: _colorForConceded(goalsConceded.length),
+                          ),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 10),
+                    pw.Expanded(
+                      child: _sectionCard(
+                        title: 'Teamplay',
+                        accent: _colorForScore(teamPlayScore),
+                        rows: [
+                          _statLine(
+                            label: 'Rebounds',
+                            value: '$reboundsWon/$reboundsLost',
+                            detail: 'saldo ${_signed(reboundBalance)}',
+                            accent: _colorForNet(reboundBalance),
+                          ),
+                          _statLine(
+                            label: 'Assist',
+                            value: '$assists',
+                            accent: assists >= 2
+                                ? _good
+                                : assists == 1
+                                ? _average
+                                : _muted,
+                          ),
+                          _statLine(
+                            label: 'Onderschepping',
+                            value: '$interceptions',
+                            accent: interceptions >= 2
+                                ? _good
+                                : interceptions == 1
+                                ? _average
+                                : _muted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              pw.SizedBox(width: colGap),
-              pw.Container(
-                width: colCenterWidth,
-                alignment: pw.Alignment.center,
-                child: pw.Text(
-                  'Rebounds',
+                pw.SizedBox(height: 12),
+                pw.Text(
+                  'Schotzones',
                   style: pw.TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: pw.FontWeight.bold,
+                    color: _ink,
                   ),
                 ),
-              ),
-              pw.SizedBox(width: colGap),
-              pw.Container(
-                width: colRightWidth,
-                child: _barRow(
-                  value: reboundsLost,
-                  maxValue: reboundMaxValue,
-                  maxWidth: colRightWidth,
-                  fill: _red,
-                  fillBack: _redBack,
-                ),
-              ),
-            ],
-          ),
-
-          pw.SizedBox(height: 34),
-
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.center,
-            children: [
-              _statCircle(label: 'Assist', value: assists),
-              pw.SizedBox(width: 28),
-              _statCircle(label: 'Onderscheppingen', value: interceptions),
-            ],
-          ),
-
-          pw.Spacer(),
-
-          pw.Align(
-            alignment: pw.Alignment.bottomCenter,
-            child: _distanceQuarterSection(
-              goalsScored: goalsScored,
-              goalsConceded: goalsConceded,
-              height: heatmapHeight,
-              leftWidth: colLeftWidth,
-              middleGapWidth: 0.0, // geen middenspleet
-              rightWidth: colRightWidth,
+                pw.SizedBox(height: 8),
+                for (
+                  var bucketIndex = 0;
+                  bucketIndex < buckets.length;
+                  bucketIndex++
+                ) ...[
+                  _zoneRow(buckets[bucketIndex]),
+                  if (bucketIndex != buckets.length - 1) pw.SizedBox(height: 6),
+                ],
+              ],
             ),
           ),
         ],
@@ -753,23 +493,285 @@ class PdfExporter {
     );
   }
 
-  static pw.Widget _statCircle({required String label, required int value}) {
-    final fontSize = label.length > 14 ? 8.4 : (label.length > 10 ? 10.0 : 11.0);
-
+  static pw.Widget _metricTile({
+    required String label,
+    required String value,
+    required String detail,
+    required p.PdfColor accent,
+  }) {
     return pw.Container(
-      width: 118,
-      height: 118,
+      padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        shape: pw.BoxShape.circle,
-        border: pw.Border.all(color: _green, width: 12),
+        color: _softFill(accent),
+        borderRadius: pw.BorderRadius.circular(14),
       ),
-      alignment: pw.Alignment.center,
-      padding: const pw.EdgeInsets.all(5),
-      child: pw.Text(
-        '$label\n$value',
-        textAlign: pw.TextAlign.center,
-        style: pw.TextStyle(fontSize: fontSize, fontWeight: pw.FontWeight.bold),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            label.toUpperCase(),
+            style: pw.TextStyle(
+              fontSize: 9,
+              color: accent,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: 22,
+              color: _ink,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(detail, style: pw.TextStyle(fontSize: 9, color: _muted)),
+        ],
       ),
     );
   }
+
+  static pw.Widget _sectionCard({
+    required String title,
+    required p.PdfColor accent,
+    required List<pw.Widget> rows,
+  }) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        color: _panel,
+        borderRadius: pw.BorderRadius.circular(14),
+        border: pw.Border.all(color: _line),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        children: [
+          pw.Text(
+            title.toUpperCase(),
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: accent,
+            ),
+          ),
+          pw.SizedBox(height: 10),
+          for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) ...[
+            rows[rowIndex],
+            if (rowIndex != rows.length - 1) pw.SizedBox(height: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _statLine({
+    required String label,
+    required String value,
+    String? detail,
+    required p.PdfColor accent,
+  }) {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+      children: [
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text(label, style: pw.TextStyle(fontSize: 10, color: _ink)),
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 4,
+              ),
+              decoration: pw.BoxDecoration(
+                color: _softFill(accent),
+                borderRadius: pw.BorderRadius.circular(999),
+              ),
+              child: pw.Text(
+                value,
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  color: accent,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (detail != null) ...[
+          pw.SizedBox(height: 2),
+          pw.Text(detail, style: pw.TextStyle(fontSize: 8, color: _muted)),
+        ],
+      ],
+    );
+  }
+
+  static pw.Widget _zoneRow(_ShotBucketStats bucket) {
+    final efficiency = bucket.attempts == 0
+        ? 0.0
+        : bucket.goals / bucket.attempts;
+    final accent = bucket.attempts == 0
+        ? _muted
+        : _colorForScore(_scoreForEfficiency(efficiency));
+
+    return pw.Row(
+      children: [
+        pw.SizedBox(
+          width: 46,
+          child: pw.Text(
+            bucket.label,
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: _ink,
+            ),
+          ),
+        ),
+        pw.SizedBox(
+          width: 56,
+          child: pw.Text(
+            '${bucket.goals}/${bucket.attempts}',
+            style: pw.TextStyle(fontSize: 10, color: _ink),
+          ),
+        ),
+        pw.SizedBox(
+          width: 40,
+          child: pw.Text(
+            bucket.attempts == 0 ? '-' : _formatPercent(efficiency),
+            style: pw.TextStyle(
+              fontSize: 10,
+              color: accent,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+        ),
+        pw.SizedBox(width: 10),
+        pw.Expanded(
+          child: _miniBar(bucket.attempts == 0 ? 0.0 : efficiency, accent),
+        ),
+      ],
+    );
+  }
+
+  static pw.Widget _miniBar(double progress, p.PdfColor accent) {
+    return pw.LayoutBuilder(
+      builder: (context, constraints) {
+        final barWidth = constraints.maxWidth;
+        return pw.Container(
+          height: 10,
+          decoration: pw.BoxDecoration(
+            color: _panel,
+            borderRadius: pw.BorderRadius.circular(999),
+          ),
+          child: pw.Align(
+            alignment: pw.Alignment.centerLeft,
+            child: pw.Container(
+              width: barWidth * progress.clamp(0.0, 1.0),
+              decoration: pw.BoxDecoration(
+                color: accent,
+                borderRadius: pw.BorderRadius.circular(999),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static List<_ShotBucketStats> _buildShotBuckets(
+    List<Goal> goalsScored,
+    List<PlayerEvent> missedShots,
+  ) {
+    final buckets = {
+      '2m': _ShotBucketStats(label: '2m'),
+      '5m': _ShotBucketStats(label: '5m'),
+      '7m': _ShotBucketStats(label: '7m'),
+      'Overig': _ShotBucketStats(label: 'Overig'),
+    };
+
+    for (final goal in goalsScored) {
+      final bucket = buckets[_bucketForType(goal.type)]!;
+      bucket.goals++;
+      bucket.attempts++;
+    }
+
+    for (final missedShot in missedShots) {
+      final type = missedShot.goalType;
+      if (type == null) continue;
+      final bucket = buckets[_bucketForType(type)]!;
+      bucket.attempts++;
+    }
+
+    return [buckets['2m']!, buckets['5m']!, buckets['7m']!, buckets['Overig']!];
+  }
+
+  static String _bucketForType(GoalType type) {
+    final label = type.label.toLowerCase();
+    if (label.contains('2m')) return '2m';
+    if (label.contains('5m')) return '5m';
+    if (label.contains('7m')) return '7m';
+    return 'Overig';
+  }
+
+  static String _formatPercent(double value) => '${(value * 100).round()}%';
+
+  static String _signed(int value) => value > 0 ? '+$value' : '$value';
+
+  static double _scoreForEfficiency(double value) {
+    if (value >= 0.60) return 1.0;
+    if (value >= 0.35) return 0.55;
+    return 0.15;
+  }
+
+  static double _scoreForConceded(int value) {
+    if (value <= 1) return 1.0;
+    if (value <= 3) return 0.55;
+    return 0.15;
+  }
+
+  static double _scoreForTeamPlay(int value) {
+    if (value >= 5) return 1.0;
+    if (value >= 2) return 0.55;
+    return 0.15;
+  }
+
+  static p.PdfColor _colorForScore(double score) {
+    if (score >= 0.67) return _good;
+    if (score >= 0.34) return _average;
+    return _bad;
+  }
+
+  static p.PdfColor _colorForNet(int value) {
+    if (value > 0) return _good;
+    if (value == 0) return _average;
+    return _bad;
+  }
+
+  static p.PdfColor _colorForConceded(int value) {
+    if (value <= 1) return _good;
+    if (value <= 3) return _average;
+    return _bad;
+  }
+
+  static String _labelForScore(double score) {
+    if (score >= 0.67) return 'GOED';
+    if (score >= 0.34) return 'GEMIDDELD';
+    return 'AANDACHT';
+  }
+
+  static p.PdfColor _softFill(p.PdfColor color) {
+    return p.PdfColor(
+      color.red + (1 - color.red) * 0.86,
+      color.green + (1 - color.green) * 0.86,
+      color.blue + (1 - color.blue) * 0.86,
+    );
+  }
+}
+
+class _ShotBucketStats {
+  _ShotBucketStats({required this.label});
+
+  final String label;
+  int goals = 0;
+  int attempts = 0;
 }

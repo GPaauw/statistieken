@@ -79,36 +79,42 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _pickTypeAndAddHomeGoal(int playerNumber) async {
-    final type = await showGoalTypePicker(context);
+    final type = await showGoalTypePicker(context, title: 'Type doelpunt voor');
     if (type == null) return;
 
     _controller.addHomeGoal(playerNumber, type);
   }
 
   Future<void> _pickTypeAndAddConcededGoal(int playerNumber) async {
-    final type = await showGoalTypePicker(context);
+    final type = await showGoalTypePicker(
+      context,
+      title: 'Type doelpunt tegen',
+    );
     if (type == null) return;
 
     _controller.addConcededGoal(playerNumber, type);
   }
 
-  Future<void> _pickGoalAction(int playerNumber) async {
-    final selection = await _showTwoOptionPicker(
-      title: 'Doelpunt registreren',
-      primaryLabel: 'Voor',
-      secondaryLabel: 'Tegen',
-      primaryColor: Colors.blue.shade700,
-      secondaryColor: Colors.red.shade600,
-    );
+  Future<void> _pickTypeAndAddMissedShot(int playerNumber) async {
+    final type = await showGoalTypePicker(context, title: 'Type schot gemist');
+    if (type == null) return;
+
+    _controller.addMissedShot(playerNumber, type);
+  }
+
+  Future<void> _pickShotAction(int playerNumber) async {
+    final selection = await _showShotPicker();
 
     if (selection == null) return;
 
-    if (selection == _TwoOptionSelection.primary) {
-      await _pickTypeAndAddHomeGoal(playerNumber);
-      return;
+    switch (selection) {
+      case _ShotSelection.goalFor:
+        await _pickTypeAndAddHomeGoal(playerNumber);
+      case _ShotSelection.goalAgainst:
+        await _pickTypeAndAddConcededGoal(playerNumber);
+      case _ShotSelection.missed:
+        await _pickTypeAndAddMissedShot(playerNumber);
     }
-
-    await _pickTypeAndAddConcededGoal(playerNumber);
   }
 
   Future<void> _pickReboundAction(int playerNumber) async {
@@ -184,11 +190,72 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Future<_ShotSelection?> _showShotPicker() async {
+    return showModalBottomSheet<_ShotSelection>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Schot registreren',
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(sheetContext, _ShotSelection.goalFor);
+                  },
+                  child: const Text('Doelpunt voor'),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(sheetContext, _ShotSelection.goalAgainst);
+                  },
+                  child: const Text('Doelpunt tegen'),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.orange.shade700,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(sheetContext, _ShotSelection.missed);
+                  },
+                  child: const Text('Schot gemist'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final playersPanel = _HomePlayersPanel(
       players: _controller.homePlayers,
-      onGoalPick: _pickGoalAction,
+      onShotPick: _pickShotAction,
       onReboundPick: _pickReboundAction,
       onAssistPick: (playerNumber) => _controller.addAssist(playerNumber),
       onInterceptionPick: (playerNumber) =>
@@ -252,7 +319,7 @@ class _HomePageState extends State<HomePage> {
 
 class _HomePlayersPanel extends StatelessWidget {
   final TeamPlayers players;
-  final void Function(int) onGoalPick;
+  final void Function(int) onShotPick;
   final void Function(int) onReboundPick;
   final void Function(int) onAssistPick;
   final void Function(int) onInterceptionPick;
@@ -260,7 +327,7 @@ class _HomePlayersPanel extends StatelessWidget {
 
   const _HomePlayersPanel({
     required this.players,
-    required this.onGoalPick,
+    required this.onShotPick,
     required this.onReboundPick,
     required this.onAssistPick,
     required this.onInterceptionPick,
@@ -293,7 +360,7 @@ class _HomePlayersPanel extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Registreer per speler doelpunt, rebound, assist of onderschepping.',
+                        'Registreer per speler schot, rebound, assist of onderschepping.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -334,7 +401,7 @@ class _HomePlayersPanel extends StatelessWidget {
             const SizedBox(height: 16),
             TeamPlayersColumns(
               players: players,
-              onGoalPick: onGoalPick,
+              onShotPick: onShotPick,
               onReboundPick: onReboundPick,
               onAssistPick: onAssistPick,
               onInterceptionPick: onInterceptionPick,
@@ -604,6 +671,13 @@ class _GoalTimeline extends StatelessWidget {
           icon: Icons.remove_circle,
           color: Colors.red,
         );
+      case PlayerEventType.shotMissed:
+        return _TimelineEventDisplay(
+          title: '$playerName mist schot - ${event.goalType!.label}',
+          subtitle: 'Schot gemist',
+          icon: Icons.sports_soccer,
+          color: Colors.orange.shade700,
+        );
       case PlayerEventType.reboundWon:
         return _TimelineEventDisplay(
           title: '$playerName pakt rebound',
@@ -637,6 +711,8 @@ class _GoalTimeline extends StatelessWidget {
 }
 
 enum _TwoOptionSelection { primary, secondary }
+
+enum _ShotSelection { goalFor, goalAgainst, missed }
 
 class _TimelineEventDisplay {
   final String title;

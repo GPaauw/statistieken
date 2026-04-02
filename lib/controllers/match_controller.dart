@@ -17,6 +17,7 @@ class MatchController {
 
   final Map<int, int> _reboundWonByPlayer = {};
   final Map<int, int> _reboundLostByPlayer = {};
+  final Map<int, int> _shotMissedByPlayer = {};
   final Map<int, int> _assistByPlayer = {};
   final Map<int, int> _interceptionByPlayer = {};
 
@@ -60,6 +61,7 @@ class MatchController {
     events.clear();
     _reboundWonByPlayer.clear();
     _reboundLostByPlayer.clear();
+    _shotMissedByPlayer.clear();
     _assistByPlayer.clear();
     _interceptionByPlayer.clear();
     onTick?.call();
@@ -91,6 +93,15 @@ class MatchController {
 
   void addAssist(int playerNumber) {
     _addCountEvent(playerNumber, PlayerEventType.assist, _assistByPlayer);
+  }
+
+  void addMissedShot(int playerNumber, GoalType type) {
+    _addCountEvent(
+      playerNumber,
+      PlayerEventType.shotMissed,
+      _shotMissedByPlayer,
+      goalType: type,
+    );
   }
 
   void addInterception(int playerNumber) {
@@ -133,14 +144,16 @@ class MatchController {
   void _addCountEvent(
     int playerNumber,
     PlayerEventType type,
-    Map<int, int> store,
-  ) {
+    Map<int, int> store, {
+    GoalType? goalType,
+  }) {
     store[playerNumber] = (store[playerNumber] ?? 0) + 1;
     events.add(
       PlayerEvent(
         secondStamp: elapsedSeconds,
         playerNumber: playerNumber,
         type: type,
+        goalType: goalType,
       ),
     );
     onTick?.call();
@@ -164,6 +177,8 @@ class MatchController {
 
   Map<int, int> get reboundLostByPlayer =>
       Map.unmodifiable(_reboundLostByPlayer);
+
+  Map<int, int> get shotMissedByPlayer => Map.unmodifiable(_shotMissedByPlayer);
 
   Map<int, int> get assistByPlayer => Map.unmodifiable(_assistByPlayer);
 
@@ -193,6 +208,8 @@ class MatchController {
         _decrement(_reboundWonByPlayer, last.playerNumber);
       case PlayerEventType.reboundLost:
         _decrement(_reboundLostByPlayer, last.playerNumber);
+      case PlayerEventType.shotMissed:
+        _decrement(_shotMissedByPlayer, last.playerNumber);
       case PlayerEventType.assist:
         _decrement(_assistByPlayer, last.playerNumber);
       case PlayerEventType.interception:
