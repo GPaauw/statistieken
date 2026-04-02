@@ -76,7 +76,7 @@ class PdfExporter {
               fontSize: 12,
               fontWeight: pw.FontWeight.bold,
             ),
-            headerDecoration: pw.BoxDecoration(color: p.PdfColors.grey300),
+            headerDecoration: pw.BoxDecoration(color: p.PdfColors.red600),
             cellStyle: cell,
             headers: ['Tijd', 'Team', 'Thuisspeler', 'Actie', 'Type', 'Stand'],
             data: () {
