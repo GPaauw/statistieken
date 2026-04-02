@@ -12,7 +12,6 @@ import 'team_names.dart';
 
 class PdfExporter {
   static const double _cardBaseWidth = 520.0;
-  static const double _cardHeight = 306.0;
 
   static final _good = p.PdfColors.green700;
   static final _average = p.PdfColors.orange700;
@@ -170,8 +169,8 @@ class PdfExporter {
     );
 
     final playerNumbers = c.homePlayers.names.keys.toList()..sort();
-    for (var index = 0; index < playerNumbers.length; index += 2) {
-      final pagePlayers = playerNumbers.skip(index).take(2).toList();
+    for (var index = 0; index < playerNumbers.length; index += 1) {
+      final pagePlayers = playerNumbers.skip(index).take(1).toList();
       doc.addPage(
         pw.Page(
           pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
@@ -283,7 +282,6 @@ class PdfExporter {
 
     return pw.Container(
       width: cardWidth,
-      height: _cardHeight,
       decoration: pw.BoxDecoration(
         color: p.PdfColors.white,
         borderRadius: pw.BorderRadius.circular(16),

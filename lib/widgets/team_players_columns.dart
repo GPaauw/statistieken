@@ -109,7 +109,7 @@ class TeamPlayersColumns extends StatelessWidget {
                     width: 140,
                     child: FilledButton.icon(
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.deepOrange.shade600,
+                        backgroundColor: Colors.blue.shade700,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
