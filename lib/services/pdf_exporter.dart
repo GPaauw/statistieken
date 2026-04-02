@@ -545,18 +545,18 @@ class PdfExporter {
             pw.Positioned(left: 1, bottom: r - 9, child: pw.Text('7m', style: lbl)),
             pw.Positioned(left: 1, bottom: r * 0.65 - 9, child: pw.Text('5m', style: lbl)),
             pw.Positioned(left: 1, bottom: r * 0.35 - 9, child: pw.Text('2m', style: lbl)),
-            // Left count values inside zones
-            pw.Positioned(left: r * 0.70, bottom: r * 0.30, child: pw.Transform.rotate(angle: -pi / 4, child: pw.Text('${outer.made}', style: cnt))),
-            pw.Positioned(left: r * 0.41, bottom: r * 0.20, child: pw.Transform.rotate(angle: -pi / 4, child: pw.Text('${middle.made}', style: cnt))),
-            pw.Positioned(left: r * 0.13, bottom: r * 0.09, child: pw.Transform.rotate(angle: -pi / 4, child: pw.Text('${inner.made}', style: cnt))),
+            // Left count values along 45° diagonal
+            pw.Positioned(left: r * 0.82 * 0.707, bottom: r * 0.82 * 0.707, child: pw.Text('${outer.made}', style: cnt)),
+            pw.Positioned(left: r * 0.50 * 0.707, bottom: r * 0.50 * 0.707, child: pw.Text('${middle.made}', style: cnt)),
+            pw.Positioned(left: r * 0.20 * 0.707, bottom: r * 0.20 * 0.707, child: pw.Text('${inner.made}', style: cnt)),
             // Right axis labels
             pw.Positioned(right: 1, bottom: r - 9, child: pw.Text('7m', style: lbl)),
             pw.Positioned(right: 1, bottom: r * 0.65 - 9, child: pw.Text('5m', style: lbl)),
             pw.Positioned(right: 1, bottom: r * 0.35 - 9, child: pw.Text('2m', style: lbl)),
-            // Right count values inside zones
-            pw.Positioned(right: r * 0.70, bottom: r * 0.30, child: pw.Transform.rotate(angle: pi / 4, child: pw.Text('${outer.against}', style: cnt))),
-            pw.Positioned(right: r * 0.41, bottom: r * 0.20, child: pw.Transform.rotate(angle: pi / 4, child: pw.Text('${middle.against}', style: cnt))),
-            pw.Positioned(right: r * 0.13, bottom: r * 0.09, child: pw.Transform.rotate(angle: pi / 4, child: pw.Text('${inner.against}', style: cnt))),
+            // Right count values along 45° diagonal
+            pw.Positioned(right: r * 0.82 * 0.707, bottom: r * 0.82 * 0.707, child: pw.Text('${outer.against}', style: cnt)),
+            pw.Positioned(right: r * 0.50 * 0.707, bottom: r * 0.50 * 0.707, child: pw.Text('${middle.against}', style: cnt)),
+            pw.Positioned(right: r * 0.20 * 0.707, bottom: r * 0.20 * 0.707, child: pw.Text('${inner.against}', style: cnt)),
           ],
         );
       },
