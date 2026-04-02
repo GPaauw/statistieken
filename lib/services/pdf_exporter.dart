@@ -289,6 +289,7 @@ class PdfExporter {
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+        mainAxisSize: pw.MainAxisSize.min,
         children: [
           pw.Container(
             height: 8,
@@ -304,6 +305,7 @@ class PdfExporter {
             padding: const pw.EdgeInsets.fromLTRB(16, 14, 16, 14),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+              mainAxisSize: pw.MainAxisSize.min,
               children: [
                 pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
