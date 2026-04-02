@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart' as m;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart' as p;
 import 'package:pdf/widgets.dart' as pw;
@@ -11,15 +13,33 @@ import '../models/match_event.dart';
 import 'team_names.dart';
 
 class PdfExporter {
-  static const double _cardHeight = 330.0;
+  static const double _cardHeight = 370.0;
+  static const _shotGoalTypes = [
+    GoalType.turnaround,
+    GoalType.throughBall,
+    GoalType.freeThrow,
+    GoalType.penalty,
+  ];
+  static const _distanceGoalTypes = [
+    GoalType.smallChance2m,
+    GoalType.midRange5m,
+    GoalType.longRange7m,
+  ];
 
   static final _good = p.PdfColors.green700;
   static final _average = p.PdfColors.orange700;
   static final _bad = p.PdfColors.red700;
+  static final _shot = p.PdfColors.blue700;
+  static final _rebound = p.PdfColors.orange700;
+  static final _assist = p.PdfColors.teal700;
+  static final _interception = p.PdfColors.green700;
   static final _ink = p.PdfColors.grey900;
   static final _muted = p.PdfColors.grey600;
   static final _panel = p.PdfColors.grey100;
   static final _line = p.PdfColors.grey300;
+  static final _zoneOuter = const p.PdfColor.fromInt(0xff09ba51);
+  static final _zoneMiddle = const p.PdfColor.fromInt(0xff98d548);
+  static final _zoneInner = const p.PdfColor.fromInt(0xffd4efac);
 
   static Future<Uint8List> buildReport({
     required MatchController c,
@@ -29,6 +49,11 @@ class PdfExporter {
   }) async {
     final now = dateTime ?? DateTime.now();
     final doc = pw.Document();
+    final materialIcons = await _loadMaterialIconsFont();
+    final pageTheme = pw.PageTheme(
+      margin: const pw.EdgeInsets.all(24),
+      theme: pw.ThemeData.withFont(icons: materialIcons),
+    );
 
     final homeName = homeTeamName ?? TeamNames.homeTeamName;
     final awayName = awayTeamName ?? TeamNames.awayTeamName;
@@ -67,7 +92,7 @@ class PdfExporter {
 
     doc.addPage(
       pw.MultiPage(
-        pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
+        pageTheme: pageTheme,
         build: (_) => [
           pw.Text('Wedstrijdverslag', style: headerStyle),
           pw.SizedBox(height: 4),
@@ -169,60 +194,41 @@ class PdfExporter {
     );
 
     final playerNumbers = c.homePlayers.names.keys.toList()..sort();
-    for (var index = 0; index < playerNumbers.length; index += 2) {
-      final pagePlayers = playerNumbers.skip(index).take(2).toList();
+    for (final playerNumber in playerNumbers) {
       doc.addPage(
         pw.Page(
-          pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
-          build: (_) => pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-            children: [
-              pw.Text('Spelerssamenvatting ($homeName)', style: headerStyle),
-              pw.SizedBox(height: 18),
-              for (
-                var pageIndex = 0;
-                pageIndex < pagePlayers.length;
-                pageIndex++
-              ) ...[
-                pw.SizedBox(
-                  height: _cardHeight,
-                  child: _playerCard(
-                    playerNumber: pagePlayers[pageIndex],
-                    playerName: c.homePlayers.getName(pagePlayers[pageIndex]),
-                    goalsScored: c.goals
-                        .where(
-                          (goal) =>
-                              goal.team == Team.home &&
-                              goal.playerNumber == pagePlayers[pageIndex],
-                        )
-                        .toList(),
-                    goalsConceded: c.goals
-                        .where(
-                          (goal) =>
-                              goal.team == Team.away &&
-                              goal.playerNumber == pagePlayers[pageIndex],
-                        )
-                        .toList(),
-                    missedShots: c.events
-                        .where(
-                          (event) =>
-                              event.type == PlayerEventType.shotMissed &&
-                              event.playerNumber == pagePlayers[pageIndex],
-                        )
-                        .toList(),
-                    reboundsWon:
-                        c.reboundWonByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    reboundsLost:
-                        c.reboundLostByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    assists: c.assistByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    interceptions:
-                        c.interceptionByPlayer[pagePlayers[pageIndex]] ?? 0,
-                  ),
-                ),
-                if (pageIndex != pagePlayers.length - 1)
-                  pw.SizedBox(height: 12),
-              ],
-            ],
+          pageTheme: pageTheme,
+          build: (_) => pw.SizedBox(
+            height: _cardHeight,
+            child: _playerCard(
+              playerNumber: playerNumber,
+              playerName: c.homePlayers.getName(playerNumber),
+              goalsScored: c.goals
+                  .where(
+                    (goal) =>
+                        goal.team == Team.home &&
+                        goal.playerNumber == playerNumber,
+                  )
+                  .toList(),
+              goalsConceded: c.goals
+                  .where(
+                    (goal) =>
+                        goal.team == Team.away &&
+                        goal.playerNumber == playerNumber,
+                  )
+                  .toList(),
+              missedShots: c.events
+                  .where(
+                    (event) =>
+                        event.type == PlayerEventType.shotMissed &&
+                        event.playerNumber == playerNumber,
+                  )
+                  .toList(),
+              reboundsWon: c.reboundWonByPlayer[playerNumber] ?? 0,
+              reboundsLost: c.reboundLostByPlayer[playerNumber] ?? 0,
+              assists: c.assistByPlayer[playerNumber] ?? 0,
+              interceptions: c.interceptionByPlayer[playerNumber] ?? 0,
+            ),
           ),
         ),
       );
@@ -265,6 +271,16 @@ class PdfExporter {
     required int assists,
     required int interceptions,
   }) {
+    final shotStats = _buildShotStats(
+      goalsScored: goalsScored,
+      goalsConceded: goalsConceded,
+      missedShots: missedShots,
+    );
+    final distanceStats = _buildDistanceStats(
+      goalsScored: goalsScored,
+      missedShots: missedShots,
+    );
+
     return pw.Container(
       decoration: pw.BoxDecoration(
         color: p.PdfColors.white,
@@ -303,26 +319,47 @@ class PdfExporter {
               ],
             ),
           ),
-          // Body: left (shots) + right (rebounds/assists/interceptions)
-          pw.Table(
-            border: pw.TableBorder(verticalInside: pw.BorderSide(color: _line)),
-            columnWidths: {
-              0: const pw.FlexColumnWidth(3),
-              1: const pw.FlexColumnWidth(2),
-            },
-            children: [
-              pw.TableRow(
-                children: [
-                  _shotSection(goalsScored, goalsConceded, missedShots),
-                  _rightSection(
-                    reboundsWon: reboundsWon,
-                    reboundsLost: reboundsLost,
-                    assists: assists,
-                    interceptions: interceptions,
+          pw.Expanded(
+            child: pw.Column(
+              children: [
+                pw.Expanded(
+                  flex: 3,
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                    children: [
+                      pw.Expanded(flex: 5, child: _shotSection(shotStats)),
+                      pw.Container(width: 1, color: _line),
+                      pw.Expanded(
+                        flex: 3,
+                        child: _rightSection(
+                          reboundsWon: reboundsWon,
+                          reboundsLost: reboundsLost,
+                          assists: assists,
+                          interceptions: interceptions,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+                pw.Container(height: 1, color: _line),
+                pw.Expanded(
+                  flex: 2,
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                    children: [
+                      pw.Expanded(
+                        flex: 3,
+                        child: _distanceBreakdown(distanceStats),
+                      ),
+                      pw.Expanded(
+                        flex: 4,
+                        child: _distanceChart(distanceStats),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -333,51 +370,57 @@ class PdfExporter {
   // Left section: Doelpunten & schoten table
   // ---------------------------------------------------------------------------
 
-  static pw.Widget _shotSection(
-    List<Goal> goalsScored,
-    List<Goal> goalsConceded,
-    List<PlayerEvent> missedShots,
-  ) {
+  static pw.Widget _shotSection(List<_ShotTypeStats> shotStats) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(10),
-      child: pw.Table(
-        border: pw.TableBorder.all(color: _line, width: 0.5),
-        columnWidths: {
-          0: const pw.FlexColumnWidth(3),
-          1: const pw.FlexColumnWidth(1),
-          2: const pw.FlexColumnWidth(1),
-          3: const pw.FlexColumnWidth(1),
-        },
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
-          // Header row
-          pw.TableRow(
-            decoration: pw.BoxDecoration(color: _panel),
+          pw.Table(
+            border: pw.TableBorder.all(color: _line, width: 0.5),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(3.1),
+              1: const pw.FlexColumnWidth(1),
+              2: const pw.FlexColumnWidth(0.9),
+              3: const pw.FlexColumnWidth(0.9),
+              4: const pw.FlexColumnWidth(1),
+            },
             children: [
-              _th('Doelpunten & schoten'),
-              _th('Voor'),
-              _th('Tegen'),
-              _th('Gemist'),
+              pw.TableRow(
+                decoration: pw.BoxDecoration(color: _panel),
+                children: [
+                  _headerTitleCell('Doelpunten & schoten', _shotIcon, _shot),
+                  _headerSpacerCell(),
+                  _headerSpacerCell(),
+                  _headerSpacerCell(),
+                  _headerSpacerCell(),
+                ],
+              ),
+              pw.TableRow(
+                decoration: pw.BoxDecoration(color: _panel),
+                children: [
+                  _th('Type'),
+                  _th('%'),
+                  _th('Voor'),
+                  _th('Tegen'),
+                  _th('Gemist'),
+                ],
+              ),
+              for (final stat in shotStats)
+                pw.TableRow(
+                  children: [
+                    _labelCell(stat.type.label),
+                    _valueTextCell(
+                      _formatPercent(stat.accuracy),
+                      _colorForAccuracy(stat.accuracy, stat.attempts),
+                    ),
+                    _valueCell(stat.made, _colorForPositiveCount),
+                    _valueCell(stat.against, _colorForConceded),
+                    _valueCell(stat.missed, _colorForNegativeCount),
+                  ],
+                ),
             ],
           ),
-          // One row per goal type
-          for (final type in GoalType.values)
-            pw.TableRow(
-              children: [
-                _labelCell(type.label),
-                _valueCell(
-                  goalsScored.where((g) => g.type == type).length,
-                  _colorForPositiveCount,
-                ),
-                _valueCell(
-                  goalsConceded.where((g) => g.type == type).length,
-                  _colorForConceded,
-                ),
-                _valueCell(
-                  missedShots.where((e) => e.goalType == type).length,
-                  _colorForNegativeCount,
-                ),
-              ],
-            ),
         ],
       ),
     );
@@ -393,21 +436,29 @@ class PdfExporter {
     required int assists,
     required int interceptions,
   }) {
+    final reboundTotal = reboundsWon + reboundsLost;
+    final reboundPercent = _ratio(reboundsWon, reboundTotal);
+
     return pw.Padding(
       padding: const pw.EdgeInsets.all(10),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          _sectionHeader('Rebounds'),
+          _sectionHeader('Rebounds', _reboundIcon, _rebound),
           pw.SizedBox(height: 4),
-          _miniStatRow('Gewonnen', reboundsWon, _colorForPositiveCount),
+          _miniStatRow(
+            'Gewonnen',
+            reboundsWon,
+            _colorForPositiveCount,
+            suffix: _formatPercent(reboundPercent),
+          ),
           _miniStatRow('Verloren', reboundsLost, _colorForNegativeCount),
           pw.SizedBox(height: 12),
-          _sectionHeader('Assists'),
+          _sectionHeader('Assists', _assistIcon, _assist),
           pw.SizedBox(height: 4),
           _miniStatRow('Assists', assists, _colorForSupportCount),
           pw.SizedBox(height: 12),
-          _sectionHeader('Onderscheppingen'),
+          _sectionHeader('Onderscheppingen', _interceptionIcon, _interception),
           pw.SizedBox(height: 4),
           _miniStatRow(
             'Onderscheppingen',
@@ -415,6 +466,79 @@ class PdfExporter {
             _colorForSupportCount,
           ),
         ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bottom section: distance breakdown + ring chart
+  // ---------------------------------------------------------------------------
+
+  static pw.Widget _distanceBreakdown(List<_DistanceStats> distanceStats) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(10),
+      child: pw.Table(
+        border: pw.TableBorder.all(color: _line, width: 0.5),
+        columnWidths: {
+          0: const pw.FlexColumnWidth(2.4),
+          1: const pw.FlexColumnWidth(1.6),
+        },
+        children: [
+          for (final stat in distanceStats)
+            pw.TableRow(
+              children: [_labelCell(stat.type.label), _distanceValueCell(stat)],
+            ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _distanceChart(List<_DistanceStats> distanceStats) {
+    final outer = distanceStats.firstWhere(
+      (stat) => stat.type == GoalType.longRange7m,
+    );
+    final middle = distanceStats.firstWhere(
+      (stat) => stat.type == GoalType.midRange5m,
+    );
+    final inner = distanceStats.firstWhere(
+      (stat) => stat.type == GoalType.smallChance2m,
+    );
+
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(
+        left: 8,
+        right: 12,
+        top: 10,
+        bottom: 10,
+      ),
+      child: pw.Center(
+        child: pw.SizedBox(
+          width: 190,
+          height: 135,
+          child: pw.Stack(
+            alignment: pw.Alignment.center,
+            children: [
+              _ringCircle(132, _zoneOuter),
+              _ringCircle(92, _zoneMiddle),
+              _ringCircle(48, _zoneInner),
+              pw.Positioned(
+                left: 18,
+                top: 57,
+                child: _chartPercent(_formatPercent(outer.accuracy)),
+              ),
+              pw.Positioned(
+                left: 73,
+                top: 57,
+                child: _chartPercent(_formatPercent(middle.accuracy)),
+              ),
+              pw.Positioned(
+                left: 111,
+                top: 55,
+                child: _chartPercent(_formatPercent(inner.accuracy)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -437,6 +561,36 @@ class PdfExporter {
     );
   }
 
+  static pw.Widget _headerTitleCell(
+    String text,
+    pw.IconData icon,
+    p.PdfColor color,
+  ) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: pw.Row(
+        children: [
+          pw.Icon(icon, size: 10, color: color),
+          pw.SizedBox(width: 4),
+          pw.Expanded(
+            child: pw.Text(
+              text,
+              style: pw.TextStyle(
+                fontSize: 8,
+                fontWeight: pw.FontWeight.bold,
+                color: _ink,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static pw.Widget _headerSpacerCell() {
+    return pw.SizedBox();
+  }
+
   static pw.Widget _labelCell(String text) {
     return pw.Container(
       color: _panel,
@@ -446,11 +600,15 @@ class PdfExporter {
   }
 
   static pw.Widget _valueCell(int value, p.PdfColor Function(int) colorFn) {
-    final color = colorFn(value);
+    return _valueTextCell('$value', colorFn(value));
+  }
+
+  static pw.Widget _valueTextCell(String text, p.PdfColor color) {
     return pw.Container(
       padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      alignment: pw.Alignment.centerLeft,
       child: pw.Text(
-        '$value',
+        text,
         style: pw.TextStyle(
           fontSize: 8,
           fontWeight: pw.FontWeight.bold,
@@ -460,7 +618,29 @@ class PdfExporter {
     );
   }
 
-  static pw.Widget _sectionHeader(String text) {
+  static pw.Widget _distanceValueCell(_DistanceStats stat) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: pw.Text(
+        '${stat.made} / ${stat.attempts} (${_formatPercent(stat.accuracy)})',
+        style: pw.TextStyle(
+          fontSize: 8,
+          fontWeight: pw.FontWeight.bold,
+          color: _colorForAccuracy(stat.accuracy, stat.attempts),
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _ringCircle(double size, p.PdfColor color) {
+    return pw.Container(
+      width: size,
+      height: size,
+      decoration: pw.BoxDecoration(color: color, shape: pw.BoxShape.circle),
+    );
+  }
+
+  static pw.Widget _chartPercent(String text) {
     return pw.Text(
       text,
       style: pw.TextStyle(
@@ -471,17 +651,39 @@ class PdfExporter {
     );
   }
 
+  static pw.Widget _sectionHeader(
+    String text,
+    pw.IconData icon,
+    p.PdfColor color,
+  ) {
+    return pw.Row(
+      children: [
+        pw.Icon(icon, size: 11, color: color),
+        pw.SizedBox(width: 4),
+        pw.Text(
+          text,
+          style: pw.TextStyle(
+            fontSize: 9,
+            fontWeight: pw.FontWeight.bold,
+            color: _ink,
+          ),
+        ),
+      ],
+    );
+  }
+
   static pw.Widget _miniStatRow(
     String label,
     int value,
-    p.PdfColor Function(int) colorFn,
-  ) {
+    p.PdfColor Function(int) colorFn, {
+    String? suffix,
+  }) {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       children: [
         pw.Text(label, style: pw.TextStyle(fontSize: 8, color: _muted)),
         pw.Text(
-          '$value',
+          suffix == null ? '$value' : '$value ($suffix)',
           style: pw.TextStyle(
             fontSize: 8,
             fontWeight: pw.FontWeight.bold,
@@ -498,9 +700,66 @@ class PdfExporter {
 
   static String _formatPercent(double value) => '${(value * 100).round()}%';
 
+  static double _ratio(int numerator, int denominator) {
+    if (denominator == 0) {
+      return 0;
+    }
+    return numerator / denominator;
+  }
+
+  static List<_ShotTypeStats> _buildShotStats({
+    required List<Goal> goalsScored,
+    required List<Goal> goalsConceded,
+    required List<PlayerEvent> missedShots,
+  }) {
+    return _shotGoalTypes
+        .map(
+          (type) => _ShotTypeStats(
+            type: type,
+            made: goalsScored.where((goal) => goal.type == type).length,
+            against: goalsConceded.where((goal) => goal.type == type).length,
+            missed: missedShots.where((event) => event.goalType == type).length,
+          ),
+        )
+        .toList();
+  }
+
+  static List<_DistanceStats> _buildDistanceStats({
+    required List<Goal> goalsScored,
+    required List<PlayerEvent> missedShots,
+  }) {
+    return _distanceGoalTypes
+        .map(
+          (type) => _DistanceStats(
+            type: type,
+            made: goalsScored.where((goal) => goal.type == type).length,
+            missed: missedShots.where((event) => event.goalType == type).length,
+          ),
+        )
+        .toList();
+  }
+
+  static Future<pw.Font> _loadMaterialIconsFont() async {
+    try {
+      final data = await rootBundle.load('fonts/MaterialIcons-Regular.otf');
+      return pw.Font.ttf(data.buffer.asByteData());
+    } catch (_) {
+      return PdfGoogleFonts.materialIcons();
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Color helpers
   // ---------------------------------------------------------------------------
+
+  static p.PdfColor _colorForAccuracy(double value, int attempts) {
+    if (attempts == 0) {
+      return _muted;
+    }
+    if (value >= 0.6) return _good;
+    if (value >= 0.35) return _average;
+    return _bad;
+  }
 
   static p.PdfColor _colorForPositiveCount(int value) {
     if (value >= 2) return _good;
@@ -525,4 +784,54 @@ class PdfExporter {
     if (value <= 3) return _average;
     return _bad;
   }
+
+  static pw.IconData get _shotIcon => _toPdfIcon(m.Icons.sports_soccer);
+
+  static pw.IconData get _reboundIcon => _toPdfIcon(m.Icons.sports_basketball);
+
+  static pw.IconData get _assistIcon => _toPdfIcon(m.Icons.handshake_outlined);
+
+  static pw.IconData get _interceptionIcon =>
+      _toPdfIcon(m.Icons.front_hand_outlined);
+
+  static pw.IconData _toPdfIcon(m.IconData icon) {
+    return pw.IconData(
+      icon.codePoint,
+      matchTextDirection: icon.matchTextDirection,
+    );
+  }
+}
+
+class _ShotTypeStats {
+  const _ShotTypeStats({
+    required this.type,
+    required this.made,
+    required this.against,
+    required this.missed,
+  });
+
+  final GoalType type;
+  final int made;
+  final int against;
+  final int missed;
+
+  int get attempts => made + missed;
+
+  double get accuracy => attempts == 0 ? 0 : made / attempts;
+}
+
+class _DistanceStats {
+  const _DistanceStats({
+    required this.type,
+    required this.made,
+    required this.missed,
+  });
+
+  final GoalType type;
+  final int made;
+  final int missed;
+
+  int get attempts => made + missed;
+
+  double get accuracy => attempts == 0 ? 0 : made / attempts;
 }
