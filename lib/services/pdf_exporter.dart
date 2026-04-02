@@ -12,7 +12,6 @@ import 'team_names.dart';
 
 class PdfExporter {
   static const double _cardBaseWidth = 520.0;
-  static const double _cardHeight = 304.0;
 
   static final _good = p.PdfColors.green700;
   static final _average = p.PdfColors.orange700;
@@ -170,67 +169,49 @@ class PdfExporter {
     );
 
     final playerNumbers = c.homePlayers.names.keys.toList()..sort();
-    for (var index = 0; index < playerNumbers.length; index += 2) {
-      final pagePlayers = playerNumbers.skip(index).take(2).toList();
+    for (final playerNumber in playerNumbers) {
       doc.addPage(
-        pw.Page(
+        pw.MultiPage(
           pageTheme: const pw.PageTheme(margin: pw.EdgeInsets.all(24)),
-          build: (_) => pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-            children: [
-              pw.Text('Spelerssamenvatting ($homeName)', style: headerStyle),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                'Sportief profiel met aantallen, rendement en statuskleur.',
-                style: pw.TextStyle(color: _muted, fontSize: 10),
-              ),
-              pw.SizedBox(height: 14),
-              for (
-                var pageIndex = 0;
-                pageIndex < pagePlayers.length;
-                pageIndex++
-              ) ...[
-                pw.SizedBox(
-                  height: _cardHeight,
-                  child: _playerCard(
-                    playerNumber: pagePlayers[pageIndex],
-                    playerName: c.homePlayers.getName(pagePlayers[pageIndex]),
-                    goalsScored: c.goals
-                        .where(
-                          (goal) =>
-                              goal.team == Team.home &&
-                              goal.playerNumber == pagePlayers[pageIndex],
-                        )
-                        .toList(),
-                    goalsConceded: c.goals
-                        .where(
-                          (goal) =>
-                              goal.team == Team.away &&
-                              goal.playerNumber == pagePlayers[pageIndex],
-                        )
-                        .toList(),
-                    missedShots: c.events
-                        .where(
-                          (event) =>
-                              event.type == PlayerEventType.shotMissed &&
-                              event.playerNumber == pagePlayers[pageIndex],
-                        )
-                        .toList(),
-                    reboundsWon:
-                        c.reboundWonByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    reboundsLost:
-                        c.reboundLostByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    assists: c.assistByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    interceptions:
-                        c.interceptionByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    cardWidth: _cardBaseWidth,
-                  ),
-                ),
-                if (pageIndex != pagePlayers.length - 1)
-                  pw.SizedBox(height: 12),
-              ],
-            ],
-          ),
+          build: (_) => [
+            pw.Text('Spelerssamenvatting ($homeName)', style: headerStyle),
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Sportief profiel met aantallen, rendement en statuskleur.',
+              style: pw.TextStyle(color: _muted, fontSize: 10),
+            ),
+            pw.SizedBox(height: 14),
+            _playerCard(
+              playerNumber: playerNumber,
+              playerName: c.homePlayers.getName(playerNumber),
+              goalsScored: c.goals
+                  .where(
+                    (goal) =>
+                        goal.team == Team.home &&
+                        goal.playerNumber == playerNumber,
+                  )
+                  .toList(),
+              goalsConceded: c.goals
+                  .where(
+                    (goal) =>
+                        goal.team == Team.away &&
+                        goal.playerNumber == playerNumber,
+                  )
+                  .toList(),
+              missedShots: c.events
+                  .where(
+                    (event) =>
+                        event.type == PlayerEventType.shotMissed &&
+                        event.playerNumber == playerNumber,
+                  )
+                  .toList(),
+              reboundsWon: c.reboundWonByPlayer[playerNumber] ?? 0,
+              reboundsLost: c.reboundLostByPlayer[playerNumber] ?? 0,
+              assists: c.assistByPlayer[playerNumber] ?? 0,
+              interceptions: c.interceptionByPlayer[playerNumber] ?? 0,
+              cardWidth: _cardBaseWidth,
+            ),
+          ],
         ),
       );
     }
@@ -286,10 +267,9 @@ class PdfExporter {
 
     return pw.Container(
       width: cardWidth,
-      height: _cardHeight,
       decoration: pw.BoxDecoration(
         color: p.PdfColors.white,
-        borderRadius: pw.BorderRadius.circular(16),
+        borderRadius: pw.BorderRadius.circular(12),
         border: pw.Border.all(color: _line),
       ),
       child: pw.Column(
@@ -307,68 +287,46 @@ class PdfExporter {
             ),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(14, 12, 14, 12),
+            padding: const pw.EdgeInsets.all(14),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              mainAxisSize: pw.MainAxisSize.min,
               children: [
                 pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 5,
-                      ),
-                      decoration: pw.BoxDecoration(
-                        color: _softFill(statusColor),
-                        borderRadius: pw.BorderRadius.circular(8),
-                      ),
-                      child: pw.Text(
-                        '#$playerNumber',
-                        style: pw.TextStyle(
-                          color: statusColor,
-                          fontWeight: pw.FontWeight.bold,
-                          fontSize: 11,
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      mainAxisSize: pw.MainAxisSize.min,
+                      children: [
+                        pw.Text(
+                          '#$playerNumber  ${playerName.toUpperCase()}',
+                          style: pw.TextStyle(
+                            fontSize: 15,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _ink,
+                          ),
                         ),
-                      ),
-                    ),
-                    pw.SizedBox(width: 8),
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        mainAxisSize: pw.MainAxisSize.min,
-                        children: [
-                          pw.Text(
-                            playerName.toUpperCase(),
-                            maxLines: 1,
-                            style: pw.TextStyle(
-                              fontSize: 15,
-                              fontWeight: pw.FontWeight.bold,
-                              color: _ink,
-                            ),
-                          ),
-                          pw.SizedBox(height: 1),
-                          pw.Text(
-                            'Spelerskaart',
-                            style: pw.TextStyle(fontSize: 9, color: _muted),
-                          ),
-                        ],
-                      ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          'Spelerskaart',
+                          style: pw.TextStyle(fontSize: 9, color: _muted),
+                        ),
+                      ],
                     ),
                     pw.Container(
                       padding: const pw.EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 5,
+                        vertical: 4,
                       ),
                       decoration: pw.BoxDecoration(
-                        color: statusColor,
-                        borderRadius: pw.BorderRadius.circular(8),
+                        color: _softFill(statusColor),
+                        borderRadius: pw.BorderRadius.circular(6),
                       ),
                       child: pw.Text(
                         statusLabel,
                         style: pw.TextStyle(
-                          color: p.PdfColors.white,
+                          color: statusColor,
                           fontSize: 9,
                           fontWeight: pw.FontWeight.bold,
                         ),
@@ -377,101 +335,46 @@ class PdfExporter {
                   ],
                 ),
                 pw.SizedBox(height: 10),
-                pw.Row(
-                  children: [
-                    pw.Expanded(
-                      child: _metricTile(
-                        label: 'Schoten',
-                        value: '$totalShots',
-                        detail:
-                            '${goalsScored.length} doelpunt / ${missedShots.length} gemist',
-                        accent: totalShots == 0 ? _muted : _average,
-                      ),
-                    ),
-                    pw.SizedBox(width: 8),
-                    pw.Expanded(
-                      child: _metricTile(
-                        label: 'Rendement',
-                        value: _formatPercent(efficiency),
-                        detail: totalShots == 0
-                            ? 'Geen schoten'
-                            : '${goalsScored.length}/$totalShots raak',
-                        accent: _colorForScore(finishingScore),
-                      ),
-                    ),
-                    pw.SizedBox(width: 8),
-                    pw.Expanded(
-                      child: _metricTile(
-                        label: 'Netto',
-                        value: _signed(netScore),
-                        detail:
-                            '${goalsScored.length} voor / ${goalsConceded.length} tegen',
-                        accent: _colorForNet(netScore),
-                      ),
-                    ),
+                _statsTable([
+                  [
+                    'Schoten',
+                    '$totalShots',
+                    'Rendement',
+                    _formatPercent(efficiency),
                   ],
-                ),
+                  [
+                    'Doelpunt voor',
+                    '${goalsScored.length}',
+                    'Schot gemist',
+                    '${missedShots.length}',
+                  ],
+                  [
+                    'Doelpunt tegen',
+                    '${goalsConceded.length}',
+                    'Netto',
+                    _signed(netScore),
+                  ],
+                  [
+                    'Rebounds',
+                    '$reboundsWon / $reboundsLost',
+                    'Saldo rebound',
+                    _signed(reboundBalance),
+                  ],
+                  ['Assist', '$assists', 'Onderschepping', '$interceptions'],
+                ]),
                 pw.SizedBox(height: 10),
-                pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Expanded(
-                      child: _sectionCard(
-                        title: 'Aanval',
-                        accent: _colorForScore(finishingScore),
-                        rows: [
-                          _statLine(
-                            label: 'Doelpunt voor',
-                            value: '${goalsScored.length}',
-                            accent: _good,
-                          ),
-                          _statLine(
-                            label: 'Schot gemist',
-                            value: '${missedShots.length}',
-                            accent: _average,
-                          ),
-                          _statLine(
-                            label: 'Doelpunt tegen',
-                            value: '${goalsConceded.length}',
-                            accent: _colorForConceded(goalsConceded.length),
-                          ),
-                        ],
-                      ),
-                    ),
-                    pw.SizedBox(width: 8),
-                    pw.Expanded(
-                      child: _sectionCard(
-                        title: 'Teamplay',
-                        accent: _colorForScore(teamPlayScore),
-                        rows: [
-                          _statLine(
-                            label: 'Rebounds',
-                            value: '$reboundsWon/$reboundsLost',
-                            detail: 'saldo ${_signed(reboundBalance)}',
-                            accent: _colorForNet(reboundBalance),
-                          ),
-                          _statLine(
-                            label: 'Assist',
-                            value: '$assists',
-                            accent: assists >= 2
-                                ? _good
-                                : assists == 1
-                                ? _average
-                                : _muted,
-                          ),
-                          _statLine(
-                            label: 'Onderschepping',
-                            value: '$interceptions',
-                            accent: interceptions >= 2
-                                ? _good
-                                : interceptions == 1
-                                ? _average
-                                : _muted,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                pw.Text(
+                  'Kwalificatie',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Afwerking: ${_labelForScore(finishingScore)} | Verdediging: ${_labelForScore(defenseScore)} | Teamplay: ${_labelForScore(teamPlayScore)}',
+                  style: pw.TextStyle(fontSize: 9, color: _muted),
                 ),
                 pw.SizedBox(height: 10),
                 _zoneTable(buckets),
@@ -483,119 +386,35 @@ class PdfExporter {
     );
   }
 
-  static pw.Widget _metricTile({
-    required String label,
-    required String value,
-    required String detail,
-    required p.PdfColor accent,
-  }) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
-      decoration: pw.BoxDecoration(
-        color: _softFill(accent),
-        borderRadius: pw.BorderRadius.circular(12),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        mainAxisSize: pw.MainAxisSize.min,
-        children: [
-          pw.Text(
-            label.toUpperCase(),
-            style: pw.TextStyle(
-              fontSize: 8,
-              color: accent,
-              fontWeight: pw.FontWeight.bold,
+  static pw.Widget _statsTable(List<List<String>> rows) {
+    return pw.Table(
+      border: pw.TableBorder.all(color: _line, width: 0.6),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(2.1),
+        1: const pw.FlexColumnWidth(1.4),
+        2: const pw.FlexColumnWidth(2.1),
+        3: const pw.FlexColumnWidth(1.4),
+      },
+      children: rows
+          .map(
+            (row) => pw.TableRow(
+              children: [
+                _statsCell(row[0], shaded: true),
+                _statsCell(row[1]),
+                _statsCell(row[2], shaded: true),
+                _statsCell(row[3]),
+              ],
             ),
-          ),
-          pw.SizedBox(height: 4),
-          pw.Text(
-            value,
-            style: pw.TextStyle(
-              fontSize: 18,
-              color: _ink,
-              fontWeight: pw.FontWeight.bold,
-            ),
-          ),
-          pw.SizedBox(height: 2),
-          pw.Text(detail, style: pw.TextStyle(fontSize: 8, color: _muted)),
-        ],
-      ),
+          )
+          .toList(),
     );
   }
 
-  static pw.Widget _sectionCard({
-    required String title,
-    required p.PdfColor accent,
-    required List<pw.Widget> rows,
-  }) {
+  static pw.Widget _statsCell(String text, {bool shaded = false}) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
-      decoration: pw.BoxDecoration(
-        color: _panel,
-        borderRadius: pw.BorderRadius.circular(12),
-        border: pw.Border.all(color: _line),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-        mainAxisSize: pw.MainAxisSize.min,
-        children: [
-          pw.Text(
-            title.toUpperCase(),
-            style: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-              color: accent,
-            ),
-          ),
-          pw.SizedBox(height: 8),
-          for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) ...[
-            rows[rowIndex],
-            if (rowIndex != rows.length - 1) pw.SizedBox(height: 6),
-          ],
-        ],
-      ),
-    );
-  }
-
-  static pw.Widget _statLine({
-    required String label,
-    required String value,
-    String? detail,
-    required p.PdfColor accent,
-  }) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-      mainAxisSize: pw.MainAxisSize.min,
-      children: [
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(label, style: pw.TextStyle(fontSize: 9, color: _ink)),
-            pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                horizontal: 7,
-                vertical: 3,
-              ),
-              decoration: pw.BoxDecoration(
-                color: _softFill(accent),
-                borderRadius: pw.BorderRadius.circular(8),
-              ),
-              child: pw.Text(
-                value,
-                style: pw.TextStyle(
-                  fontSize: 9,
-                  color: accent,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (detail != null) ...[
-          pw.SizedBox(height: 1),
-          pw.Text(detail, style: pw.TextStyle(fontSize: 7, color: _muted)),
-        ],
-      ],
+      color: shaded ? _panel : p.PdfColors.white,
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: pw.Text(text, style: pw.TextStyle(fontSize: 9, color: _ink)),
     );
   }
 
@@ -614,7 +433,7 @@ class PdfExporter {
           pw.Text(
             'SCHOTZONES',
             style: pw.TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: pw.FontWeight.bold,
               color: _ink,
             ),
@@ -648,7 +467,7 @@ class PdfExporter {
           child: pw.Text(
             bucket.label,
             style: pw.TextStyle(
-              fontSize: 8,
+              fontSize: 9,
               fontWeight: pw.FontWeight.bold,
               color: _ink,
             ),
@@ -657,7 +476,7 @@ class PdfExporter {
         pw.Expanded(
           child: pw.Text(
             '${bucket.goals}/${bucket.attempts} pogingen',
-            style: pw.TextStyle(fontSize: 8, color: _ink),
+            style: pw.TextStyle(fontSize: 9, color: _ink),
           ),
         ),
         pw.Container(
@@ -669,7 +488,7 @@ class PdfExporter {
           child: pw.Text(
             bucket.attempts == 0 ? '-' : _formatPercent(efficiency),
             style: pw.TextStyle(
-              fontSize: 8,
+              fontSize: 9,
               color: accent,
               fontWeight: pw.FontWeight.bold,
             ),
