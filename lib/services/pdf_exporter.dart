@@ -7,21 +7,11 @@ import 'package:printing/printing.dart';
 
 import '../controllers/match_controller.dart';
 import '../models/goal.dart';
-import 'dart:typed_data';
-
-import 'package:intl/intl.dart';
-import 'package:pdf/pdf.dart' as p;
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
-
-import '../controllers/match_controller.dart';
-import '../models/goal.dart';
 import '../models/match_event.dart';
 import 'team_names.dart';
 
 class PdfExporter {
-  static const double _cardBaseWidth = 520.0;
-  static const double _cardHeight = 286.0;
+  static const double _cardHeight = 330.0;
 
   static final _good = p.PdfColors.green700;
   static final _average = p.PdfColors.orange700;
@@ -188,12 +178,7 @@ class PdfExporter {
             crossAxisAlignment: pw.CrossAxisAlignment.stretch,
             children: [
               pw.Text('Spelerssamenvatting ($homeName)', style: headerStyle),
-              pw.SizedBox(height: 4),
-              pw.Text(
-                'Kleuren per statistiek op basis van de waarde.',
-                style: pw.TextStyle(color: _muted, fontSize: 10),
-              ),
-              pw.SizedBox(height: 14),
+              pw.SizedBox(height: 18),
               for (
                 var pageIndex = 0;
                 pageIndex < pagePlayers.length;
@@ -232,7 +217,6 @@ class PdfExporter {
                     assists: c.assistByPlayer[pagePlayers[pageIndex]] ?? 0,
                     interceptions:
                         c.interceptionByPlayer[pagePlayers[pageIndex]] ?? 0,
-                    cardWidth: _cardBaseWidth,
                   ),
                 ),
                 if (pageIndex != pagePlayers.length - 1)
@@ -266,6 +250,10 @@ class PdfExporter {
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // Player card
+  // ---------------------------------------------------------------------------
+
   static pw.Widget _playerCard({
     required int playerNumber,
     required String playerName,
@@ -276,204 +264,243 @@ class PdfExporter {
     required int reboundsLost,
     required int assists,
     required int interceptions,
-    required double cardWidth,
   }) {
-    final totalShots = goalsScored.length + missedShots.length;
-    final efficiency = totalShots == 0 ? 0.0 : goalsScored.length / totalShots;
-    final netScore = goalsScored.length - goalsConceded.length;
-    final reboundBalance = reboundsWon - reboundsLost;
-    final teamPlay = assists + interceptions + reboundsWon;
-
-    final finishingScore = _scoreForEfficiency(efficiency);
-    final defenseScore = _scoreForConceded(goalsConceded.length);
-    final teamPlayScore = _scoreForTeamPlay(teamPlay);
-    final overallScore = (finishingScore + defenseScore + teamPlayScore) / 3;
-    final statusColor = _colorForScore(overallScore);
-    final statusLabel = _labelForScore(overallScore);
-
     return pw.Container(
-      width: cardWidth,
-      height: _cardHeight,
       decoration: pw.BoxDecoration(
         color: p.PdfColors.white,
-        borderRadius: pw.BorderRadius.circular(12),
+        borderRadius: pw.BorderRadius.circular(8),
         border: pw.Border.all(color: _line),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.stretch,
         children: [
+          // Header bar
           pw.Container(
-            height: 8,
+            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: pw.BoxDecoration(
-              color: statusColor,
+              color: _panel,
               borderRadius: const pw.BorderRadius.only(
-                topLeft: pw.Radius.circular(12),
-                topRight: pw.Radius.circular(12),
+                topLeft: pw.Radius.circular(8),
+                topRight: pw.Radius.circular(8),
               ),
+              border: pw.Border(bottom: pw.BorderSide(color: _line)),
             ),
-          ),
-          pw.Padding(
-            padding: const pw.EdgeInsets.fromLTRB(12, 10, 12, 10),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                          '#$playerNumber  ${playerName.toUpperCase()}',
-                          style: pw.TextStyle(
-                            fontSize: 13,
-                            fontWeight: pw.FontWeight.bold,
-                            color: _ink,
-                          ),
-                        ),
-                        pw.SizedBox(height: 2),
-                        pw.Text(
-                          'Spelerskaart',
-                          style: pw.TextStyle(fontSize: 8, color: _muted),
-                        ),
-                      ],
-                    ),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: pw.BoxDecoration(
-                        color: _softFill(statusColor),
-                        borderRadius: pw.BorderRadius.circular(6),
-                      ),
-                      child: pw.Text(
-                        statusLabel,
-                        style: pw.TextStyle(
-                          color: statusColor,
-                          fontSize: 8,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 8),
-                _statsTable([
-                  _PlayerStatRow(
-                    leftLabel: 'Doelpunt voor',
-                    leftValue: '${goalsScored.length}',
-                    leftAccent: _colorForPositiveCount(goalsScored.length),
-                    rightLabel: 'Schot gemist',
-                    rightValue: '${missedShots.length}',
-                    rightAccent: _colorForNegativeCount(missedShots.length),
-                  ),
-                  _PlayerStatRow(
-                    leftLabel: 'Doelpunt tegen',
-                    leftValue: '${goalsConceded.length}',
-                    leftAccent: _colorForConceded(goalsConceded.length),
-                    rightLabel: 'Rendement',
-                    rightValue: _formatPercent(efficiency),
-                    rightAccent: _colorForScore(finishingScore),
-                  ),
-                  _PlayerStatRow(
-                    leftLabel: 'Rebounds',
-                    leftValue: '$reboundsWon / $reboundsLost',
-                    leftAccent: _colorForNet(reboundBalance),
-                    rightLabel: 'Assist',
-                    rightValue: '$assists',
-                    rightAccent: _colorForSupportCount(assists),
-                  ),
-                  _PlayerStatRow(
-                    leftLabel: 'Onderschepping',
-                    leftValue: '$interceptions',
-                    leftAccent: _colorForSupportCount(interceptions),
-                    rightLabel: 'Netto',
-                    rightValue: _signed(netScore),
-                    rightAccent: _colorForNet(netScore),
-                  ),
-                ]),
-                pw.SizedBox(height: 10),
                 pw.Text(
-                  'Afwerking: ${_labelForScore(finishingScore)} | Verdediging: ${_labelForScore(defenseScore)} | Teamplay: ${_labelForScore(teamPlayScore)}',
-                  style: pw.TextStyle(fontSize: 8, color: _muted),
+                  '#$playerNumber  ${playerName.toUpperCase()}',
+                  style: pw.TextStyle(
+                    fontSize: 13,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+                pw.Text(
+                  'Spelerssamenvatting',
+                  style: pw.TextStyle(fontSize: 9, color: _muted),
                 ),
               ],
             ),
+          ),
+          // Body: left (shots) + right (rebounds/assists/interceptions)
+          pw.Table(
+            border: pw.TableBorder(verticalInside: pw.BorderSide(color: _line)),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(3),
+              1: const pw.FlexColumnWidth(2),
+            },
+            children: [
+              pw.TableRow(
+                children: [
+                  _shotSection(goalsScored, goalsConceded, missedShots),
+                  _rightSection(
+                    reboundsWon: reboundsWon,
+                    reboundsLost: reboundsLost,
+                    assists: assists,
+                    interceptions: interceptions,
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  static pw.Widget _statsTable(List<_PlayerStatRow> rows) {
-    return pw.Table(
-      border: pw.TableBorder.all(color: _line, width: 0.6),
-      columnWidths: {
-        0: const pw.FlexColumnWidth(2.0),
-        1: const pw.FlexColumnWidth(1.2),
-        2: const pw.FlexColumnWidth(2.0),
-        3: const pw.FlexColumnWidth(1.2),
-      },
-      children: rows
-          .map(
-            (row) => pw.TableRow(
+  // ---------------------------------------------------------------------------
+  // Left section: Doelpunten & schoten table
+  // ---------------------------------------------------------------------------
+
+  static pw.Widget _shotSection(
+    List<Goal> goalsScored,
+    List<Goal> goalsConceded,
+    List<PlayerEvent> missedShots,
+  ) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(10),
+      child: pw.Table(
+        border: pw.TableBorder.all(color: _line, width: 0.5),
+        columnWidths: {
+          0: const pw.FlexColumnWidth(3),
+          1: const pw.FlexColumnWidth(1),
+          2: const pw.FlexColumnWidth(1),
+          3: const pw.FlexColumnWidth(1),
+        },
+        children: [
+          // Header row
+          pw.TableRow(
+            decoration: pw.BoxDecoration(color: _panel),
+            children: [
+              _th('Doelpunten & schoten'),
+              _th('Voor'),
+              _th('Tegen'),
+              _th('Gemist'),
+            ],
+          ),
+          // One row per goal type
+          for (final type in GoalType.values)
+            pw.TableRow(
               children: [
-                _statsCell(row.leftLabel, accent: row.leftAccent, shaded: true),
-                _statsCell(row.leftValue, accent: row.leftAccent),
-                _statsCell(
-                  row.rightLabel,
-                  accent: row.rightAccent,
-                  shaded: true,
+                _labelCell(type.label),
+                _valueCell(
+                  goalsScored.where((g) => g.type == type).length,
+                  _colorForPositiveCount,
                 ),
-                _statsCell(row.rightValue, accent: row.rightAccent),
+                _valueCell(
+                  goalsConceded.where((g) => g.type == type).length,
+                  _colorForConceded,
+                ),
+                _valueCell(
+                  missedShots.where((e) => e.goalType == type).length,
+                  _colorForNegativeCount,
+                ),
               ],
             ),
-          )
-          .toList(),
+        ],
+      ),
     );
   }
 
-  static pw.Widget _statsCell(
-    String text, {
-    required p.PdfColor accent,
-    bool shaded = false,
+  // ---------------------------------------------------------------------------
+  // Right section: Rebounds / Assists / Onderscheppingen
+  // ---------------------------------------------------------------------------
+
+  static pw.Widget _rightSection({
+    required int reboundsWon,
+    required int reboundsLost,
+    required int assists,
+    required int interceptions,
   }) {
-    return pw.Container(
-      color: shaded ? _softFill(accent) : p.PdfColors.white,
-      padding: const pw.EdgeInsets.symmetric(horizontal: 7, vertical: 6),
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(10),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          _sectionHeader('Rebounds'),
+          pw.SizedBox(height: 4),
+          _miniStatRow('Gewonnen', reboundsWon, _colorForPositiveCount),
+          _miniStatRow('Verloren', reboundsLost, _colorForNegativeCount),
+          pw.SizedBox(height: 12),
+          _sectionHeader('Assists'),
+          pw.SizedBox(height: 4),
+          _miniStatRow('Assists', assists, _colorForSupportCount),
+          pw.SizedBox(height: 12),
+          _sectionHeader('Onderscheppingen'),
+          pw.SizedBox(height: 4),
+          _miniStatRow(
+            'Onderscheppingen',
+            interceptions,
+            _colorForSupportCount,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Cell helpers
+  // ---------------------------------------------------------------------------
+
+  static pw.Widget _th(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
       child: pw.Text(
         text,
         style: pw.TextStyle(
-          fontSize: 8,
-          color: shaded ? accent : _ink,
-          fontWeight: shaded ? pw.FontWeight.bold : pw.FontWeight.normal,
+          fontSize: 7,
+          fontWeight: pw.FontWeight.bold,
+          color: _ink,
         ),
       ),
     );
   }
 
+  static pw.Widget _labelCell(String text) {
+    return pw.Container(
+      color: _panel,
+      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: pw.Text(text, style: pw.TextStyle(fontSize: 8, color: _ink)),
+    );
+  }
+
+  static pw.Widget _valueCell(int value, p.PdfColor Function(int) colorFn) {
+    final color = colorFn(value);
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+      child: pw.Text(
+        '$value',
+        style: pw.TextStyle(
+          fontSize: 8,
+          fontWeight: pw.FontWeight.bold,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _sectionHeader(String text) {
+    return pw.Text(
+      text,
+      style: pw.TextStyle(
+        fontSize: 9,
+        fontWeight: pw.FontWeight.bold,
+        color: _ink,
+      ),
+    );
+  }
+
+  static pw.Widget _miniStatRow(
+    String label,
+    int value,
+    p.PdfColor Function(int) colorFn,
+  ) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      children: [
+        pw.Text(label, style: pw.TextStyle(fontSize: 8, color: _muted)),
+        pw.Text(
+          '$value',
+          style: pw.TextStyle(
+            fontSize: 8,
+            fontWeight: pw.FontWeight.bold,
+            color: colorFn(value),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Formatting helpers
+  // ---------------------------------------------------------------------------
+
   static String _formatPercent(double value) => '${(value * 100).round()}%';
 
-  static String _signed(int value) => value > 0 ? '+$value' : '$value';
-
-  static double _scoreForEfficiency(double value) {
-    if (value >= 0.60) return 1.0;
-    if (value >= 0.35) return 0.55;
-    return 0.15;
-  }
-
-  static double _scoreForConceded(int value) {
-    if (value <= 1) return 1.0;
-    if (value <= 3) return 0.55;
-    return 0.15;
-  }
-
-  static double _scoreForTeamPlay(int value) {
-    if (value >= 5) return 1.0;
-    if (value >= 2) return 0.55;
-    return 0.15;
-  }
+  // ---------------------------------------------------------------------------
+  // Color helpers
+  // ---------------------------------------------------------------------------
 
   static p.PdfColor _colorForPositiveCount(int value) {
     if (value >= 2) return _good;
@@ -493,53 +520,9 @@ class PdfExporter {
     return _muted;
   }
 
-  static p.PdfColor _colorForScore(double score) {
-    if (score >= 0.67) return _good;
-    if (score >= 0.34) return _average;
-    return _bad;
-  }
-
-  static p.PdfColor _colorForNet(int value) {
-    if (value > 0) return _good;
-    if (value == 0) return _average;
-    return _bad;
-  }
-
   static p.PdfColor _colorForConceded(int value) {
     if (value <= 1) return _good;
     if (value <= 3) return _average;
     return _bad;
   }
-
-  static String _labelForScore(double score) {
-    if (score >= 0.67) return 'GOED';
-    if (score >= 0.34) return 'GEMIDDELD';
-    return 'AANDACHT';
-  }
-
-  static p.PdfColor _softFill(p.PdfColor color) {
-    return p.PdfColor(
-      color.red + (1 - color.red) * 0.86,
-      color.green + (1 - color.green) * 0.86,
-      color.blue + (1 - color.blue) * 0.86,
-    );
-  }
-}
-
-class _PlayerStatRow {
-  const _PlayerStatRow({
-    required this.leftLabel,
-    required this.leftValue,
-    required this.leftAccent,
-    required this.rightLabel,
-    required this.rightValue,
-    required this.rightAccent,
-  });
-
-  final String leftLabel;
-  final String leftValue;
-  final p.PdfColor leftAccent;
-  final String rightLabel;
-  final String rightValue;
-  final p.PdfColor rightAccent;
 }
