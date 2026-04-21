@@ -32,4 +32,15 @@ class TeamPlayers {
     updated[next] = "Speler $next";
     return TeamPlayers(names: updated);
   }
+
+  Map<String, String> toJson() => {for (final e in names.entries) e.key.toString(): e.value};
+
+  factory TeamPlayers.fromJson(Map<String, dynamic> json) {
+    final map = <int, String>{};
+    for (final entry in json.entries) {
+      final key = int.tryParse(entry.key) ?? 0;
+      if (key > 0) map[key] = entry.value as String;
+    }
+    return TeamPlayers(names: map);
+  }
 }
