@@ -25,6 +25,10 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    // BELANGRIJK: start altijd in Light mode op deze pagina
+    ThemeService.instance.modeNotifier.value = ThemeMode.light;
+
     _controller = MatchController(onTick: _safeSetState);
   }
 
@@ -618,9 +622,9 @@ class _ScoreValue extends StatelessWidget {
         Text(
           '$score',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w800,
-          ),
+                color: color,
+                fontWeight: FontWeight.w800,
+              ),
         ),
       ],
     );
