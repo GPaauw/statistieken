@@ -62,7 +62,7 @@ class PdfExporter {
         _pdfSafe(c.homePlayers.getName(goal.playerNumber));
 
     String actionLabel(Goal goal) =>
-        goal.team == Team.home ? 'Doelpunt' : 'Tegen';
+        goal.team == GoalSide.home ? 'Doelpunt' : 'Tegen';
 
     final headerStyle = pw.TextStyle(
       fontSize: 22,
@@ -141,14 +141,14 @@ class PdfExporter {
                 var homeScore = 0;
                 var awayScore = 0;
                 for (final goal in c.goals) {
-                  if (goal.team == Team.home) {
+                  if (goal.team == GoalSide.home) {
                     homeScore++;
                   } else {
                     awayScore++;
                   }
                   rows.add([
                     fmtTime(goal.secondStamp),
-                    goal.team == Team.home ? homeName : awayName,
+                    goal.team == GoalSide.home ? homeName : awayName,
                     homePlayerName(goal),
                     actionLabel(goal),
                     goal.type.label,
@@ -197,14 +197,14 @@ class PdfExporter {
           goalsScored: c.goals
               .where(
                 (goal) =>
-                    goal.team == Team.home &&
+                    goal.team == GoalSide.home &&
                     goal.playerNumber == playerNumber,
               )
               .toList(),
           goalsConceded: c.goals
               .where(
                 (goal) =>
-                    goal.team == Team.away &&
+                    goal.team == GoalSide.away &&
                     goal.playerNumber == playerNumber,
               )
               .toList(),

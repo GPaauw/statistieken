@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../services/team_names.dart';
 
 /// Team aanduiding
-enum Team { home, away }
+enum GoalSide { home, away }
 
 /// Type doelpunt
 enum GoalType {
@@ -41,12 +41,12 @@ extension GoalTypeLabel on GoalType {
 @immutable
 class Goal {
   final int secondStamp;
-  final Team team;
+  final GoalSide team;
 
   /// Het thuisspelersnummer dat bij dit moment hoort.
   ///
-  /// - Bij [Team.home] is dit de speler die scoorde.
-  /// - Bij [Team.away] is dit de thuisspeler die het doelpunt tegen kreeg.
+  /// - Bij [GoalSide.home] is dit de speler die scoorde.
+  /// - Bij [GoalSide.away] is dit de thuisspeler die het doelpunt tegen kreeg.
   final int playerNumber;
   final GoalType type;
 
@@ -57,9 +57,9 @@ class Goal {
     required this.type,
   });
 
-  bool get isHomeGoal => team == Team.home;
+  bool get isHomeGoal => team == GoalSide.home;
 
-  bool get isAwayGoal => team == Team.away;
+  bool get isAwayGoal => team == GoalSide.away;
 
   String get formattedTime {
     final m = (secondStamp ~/ 60).toString().padLeft(2, '0');

@@ -6,6 +6,7 @@ import '../models/match_event.dart';
 import '../models/players.dart';
 import '../services/pdf_exporter.dart';
 import '../services/team_names.dart';
+import '../services/theme_service.dart';
 import '../widgets/goal_type_picker.dart';
 import '../widgets/player_name_editor.dart';
 import '../widgets/team_players_columns.dart';
@@ -290,7 +291,27 @@ class _HomePageState extends State<HomePage> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistieken'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Statistieken'),
+        centerTitle: true,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: ValueListenableBuilder<ThemeMode>(
+              valueListenable: ThemeService.instance.modeNotifier,
+              builder: (context, mode, _) {
+                return IconButton(
+                  onPressed: () => ThemeService.instance.toggle(),
+                  icon: Icon(
+                    mode == ThemeMode.dark ? Icons.nights_stay : Icons.wb_sunny,
+                  ),
+                  tooltip: 'Thema',
+                );
+              },
+            ),
+          ),
+        ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 1150;

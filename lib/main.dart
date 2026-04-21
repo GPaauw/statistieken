@@ -1,9 +1,11 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
+import 'services/theme_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ThemeService.instance.init();
   runApp(const ScoreApp());
 }
 
@@ -13,16 +15,28 @@ class ScoreApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = ColorScheme.fromSeed(seedColor: Colors.indigo);
+    final darkColorScheme = ColorScheme.fromSeed(seedColor: Colors.indigo, brightness: Brightness.dark);
 
-    return MaterialApp(
-      title: 'Statistieken',
-      theme: ThemeData(
-        colorScheme: colorScheme,
-        useMaterial3: true,
-        fontFamily: 'Roboto',
-      ),
-      debugShowCheckedModeBanner: false,
-      home: const HomePage(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeService.instance.modeNotifier,
+      builder: (context, themeMode, _) {
+        return MaterialApp(
+          title: 'Statistieken',
+          theme: ThemeData(
+            colorScheme: colorScheme,
+            useMaterial3: true,
+            fontFamily: 'Roboto',
+          ),
+          darkTheme: ThemeData(
+            colorScheme: darkColorScheme,
+            useMaterial3: true,
+            fontFamily: 'Roboto',
+          ),
+          themeMode: themeMode,
+          debugShowCheckedModeBanner: false,
+          home: const HomePage(),
+        );
+      },
     );
   }
 }

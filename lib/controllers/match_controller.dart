@@ -68,11 +68,11 @@ class MatchController {
   }
 
   void addHomeGoal(int playerNumber, GoalType type) {
-    _addGoal(Team.home, playerNumber, type);
+    _addGoal(GoalSide.home, playerNumber, type);
   }
 
   void addConcededGoal(int playerNumber, GoalType type) {
-    _addGoal(Team.away, playerNumber, type);
+    _addGoal(GoalSide.away, playerNumber, type);
   }
 
   void addReboundWon(int playerNumber) {
@@ -112,7 +112,7 @@ class MatchController {
     );
   }
 
-  void _addGoal(Team team, int playerNumber, GoalType type) {
+  void _addGoal(GoalSide team, int playerNumber, GoalType type) {
     goals.add(
       Goal(
         secondStamp: elapsedSeconds,
@@ -126,14 +126,14 @@ class MatchController {
       PlayerEvent(
         secondStamp: elapsedSeconds,
         playerNumber: playerNumber,
-        type: team == Team.home
+        type: team == GoalSide.home
             ? PlayerEventType.goalFor
             : PlayerEventType.goalAgainst,
         goalType: type,
       ),
     );
 
-    if (team == Team.home) {
+    if (team == GoalSide.home) {
       homeScore++;
     } else {
       awayScore++;
