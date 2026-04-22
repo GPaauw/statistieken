@@ -304,6 +304,7 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
+        title: null,
         automaticallyImplyLeading: false,
         titleSpacing: 0,
         toolbarHeight: kToolbarHeight,
