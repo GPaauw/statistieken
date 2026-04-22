@@ -310,15 +310,26 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor ?? Theme.of(context).colorScheme.primary,
         elevation: Theme.of(context).appBarTheme.elevation ?? 4,
         flexibleSpace: SafeArea(
-          child: Row(
-            children: [
-              const SizedBox(width: 8),
-              // Leading: popup menu with team name (constrained so it doesn't push center)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 260),
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 0),
-                  child: PopupMenuButton<String>(
+          child: SizedBox(
+            height: kToolbarHeight,
+            child: Stack(
+              children: [
+                // Absolutely centered title so it's visually centered on all widths
+                Center(
+                  child: Text(
+                    'Statistieken',
+                    style: Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Row(
+                  children: [
+                    const SizedBox(width: 8),
+                    // Leading: popup menu with team name (constrained so it doesn't push center)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 260),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 0),
+                        child: PopupMenuButton<String>(
                     tooltip: 'Thuissel',
                     onSelected: (value) async {
                       if (value.startsWith('select:')) {
@@ -403,8 +414,28 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                 ),
-              ),
-            ],
+                    ),
+                    // push actions to the right
+                    const Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ValueListenableBuilder<ThemeMode>(
+                        valueListenable: ThemeService.instance.modeNotifier,
+                        builder: (context, mode, _) {
+                          return IconButton(
+                            onPressed: () => ThemeService.instance.toggle(),
+                            icon: Icon(
+                              mode == ThemeMode.dark ? Icons.nights_stay : Icons.wb_sunny,
+                            ),
+                            tooltip: 'Thema',
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
