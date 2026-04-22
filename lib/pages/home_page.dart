@@ -307,8 +307,8 @@ class _HomePageState extends State<HomePage> {
         automaticallyImplyLeading: false,
         titleSpacing: 0,
         toolbarHeight: kToolbarHeight,
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor ?? Theme.of(context).colorScheme.primary,
-        elevation: Theme.of(context).appBarTheme.elevation ?? 4,
+        backgroundColor: Theme.of(context).cardColor,
+        elevation: 0,
         flexibleSpace: SafeArea(
           child: SizedBox(
             height: kToolbarHeight,
@@ -390,31 +390,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              // Centered title that occupies the remaining space
-              Expanded(
-                child: Center(
-                  child: Text(
-                    'Statistieken',
-                    style: Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-              ),
-              // Actions
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ValueListenableBuilder<ThemeMode>(
-                  valueListenable: ThemeService.instance.modeNotifier,
-                  builder: (context, mode, _) {
-                    return IconButton(
-                      onPressed: () => ThemeService.instance.toggle(),
-                      icon: Icon(
-                        mode == ThemeMode.dark ? Icons.nights_stay : Icons.wb_sunny,
-                      ),
-                      tooltip: 'Thema',
-                    );
-                  },
-                ),
-                    ),
+              
                     // push actions to the right
                     const Spacer(),
                     Padding(
