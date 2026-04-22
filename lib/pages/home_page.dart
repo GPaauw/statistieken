@@ -303,15 +303,21 @@ class _HomePageState extends State<HomePage> {
     );
 
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight),
-        child: Container(
-          color: Theme.of(context).primaryColor,
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        toolbarHeight: kToolbarHeight,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor ?? Theme.of(context).colorScheme.primary,
+        elevation: Theme.of(context).appBarTheme.elevation ?? 4,
+        flexibleSpace: SafeArea(
           child: Row(
             children: [
-              Flexible(
+              const SizedBox(width: 8),
+              // Leading: popup menu with team name (constrained so it doesn't push center)
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 260),
                 child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
+                  padding: const EdgeInsets.only(left: 0),
                   child: PopupMenuButton<String>(
                     tooltip: 'Thuissel',
                     onSelected: (value) async {
@@ -373,14 +379,16 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+              // Centered title that occupies the remaining space
               Expanded(
                 child: Center(
                   child: Text(
                     'Statistieken',
-                    style: Theme.of(context).appBarTheme.titleTextStyle,
+                    style: Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
               ),
+              // Actions
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: ValueListenableBuilder<ThemeMode>(
