@@ -303,89 +303,102 @@ class _HomePageState extends State<HomePage> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        leadingWidth: 180,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: PopupMenuButton<String>(
-            tooltip: 'Thuissel',
-            onSelected: (value) async {
-              if (value.startsWith('select:')) {
-                final id = value.substring('select:'.length);
-                await TeamNames.selectHomeTeam(id);
-                // load selected team's players into the match controller
-                final selected = TeamNames.selectedHomeTeam;
-                if (selected != null) {
-                  _controller.updateHomePlayers(selected.players);
-                }
-                _safeSetState();
-              } else if (value == 'new') {
-                final created = await showTeamEditor(context);
-                if (created != null) {
-                  await TeamNames.addTeam(created);
-                  await TeamNames.selectHomeTeam(created.id);
-                  _controller.updateHomePlayers(created.players);
-                  _safeSetState();
-                }
-              } else if (value == 'manage') {
-                await showManageTeamsDialog(context);
-                final selected = TeamNames.selectedHomeTeam;
-                if (selected != null) {
-                  _controller.updateHomePlayers(selected.players);
-                }
-                _safeSetState();
-              }
-            },
-            itemBuilder: (ctx) {
-              final items = <PopupMenuEntry<String>>[];
-              for (final t in TeamNames.teams) {
-                items.add(PopupMenuItem(
-                  value: 'select:${t.id}',
-                  child: Row(
-                    children: [
-                      CircleAvatar(radius: 14, child: Icon(Icons.checkroom, size: 16)),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(t.name)),
-                    ],
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: Container(
+          color: Theme.of(context).primaryColor,
+          child: Row(
+            children: [
+              Flexible(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: PopupMenuButton<String>(
+                    tooltip: 'Thuissel',
+                    onSelected: (value) async {
+                      if (value.startsWith('select:')) {
+                        final id = value.substring('select:'.length);
+                        await TeamNames.selectHomeTeam(id);
+                        // load selected team's players into the match controller
+                        final selected = TeamNames.selectedHomeTeam;
+                        if (selected != null) {
+                          _controller.updateHomePlayers(selected.players);
+                        }
+                        _safeSetState();
+                      } else if (value == 'new') {
+                        final created = await showTeamEditor(context);
+                        if (created != null) {
+                          await TeamNames.addTeam(created);
+                          await TeamNames.selectHomeTeam(created.id);
+                          _controller.updateHomePlayers(created.players);
+                          _safeSetState();
+                        }
+                      } else if (value == 'manage') {
+                        await showManageTeamsDialog(context);
+                        final selected = TeamNames.selectedHomeTeam;
+                        if (selected != null) {
+                          _controller.updateHomePlayers(selected.players);
+                        }
+                        _safeSetState();
+                      }
+                    },
+                    itemBuilder: (ctx) {
+                      final items = <PopupMenuEntry<String>>[];
+                      for (final t in TeamNames.teams) {
+                        items.add(PopupMenuItem(
+                          value: 'select:${t.id}',
+                          child: Row(
+                            children: [
+                              CircleAvatar(radius: 14, child: Icon(Icons.checkroom, size: 16)),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(t.name)),
+                            ],
+                          ),
+                        ));
+                      }
+                      items.add(const PopupMenuDivider());
+                      items.add(const PopupMenuItem(value: 'new', child: Text('Nieuw team...')));
+                      items.add(const PopupMenuItem(value: 'manage', child: Text('Beheer teams...')));
+                      return items;
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 16,
+                          child: Icon(Icons.checkroom, size: 18),
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(child: Text(TeamNames.homeTeamName, overflow: TextOverflow.ellipsis)),
+                      ],
+                    ),
                   ),
-                ));
-              }
-              items.add(const PopupMenuDivider());
-              items.add(const PopupMenuItem(value: 'new', child: Text('Nieuw team...')));
-              items.add(const PopupMenuItem(value: 'manage', child: Text('Beheer teams...')));
-              return items;
-            },
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  child: Icon(Icons.checkroom, size: 18),
                 ),
-                const SizedBox(width: 8),
-                Flexible(child: Text(TeamNames.homeTeamName, overflow: TextOverflow.ellipsis)),
-              ],
-            ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Statistieken',
+                    style: Theme.of(context).appBarTheme.titleTextStyle,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: ValueListenableBuilder<ThemeMode>(
+                  valueListenable: ThemeService.instance.modeNotifier,
+                  builder: (context, mode, _) {
+                    return IconButton(
+                      onPressed: () => ThemeService.instance.toggle(),
+                      icon: Icon(
+                        mode == ThemeMode.dark ? Icons.nights_stay : Icons.wb_sunny,
+                      ),
+                      tooltip: 'Thema',
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
-        title: const Text('Statistieken'),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: ValueListenableBuilder<ThemeMode>(
-              valueListenable: ThemeService.instance.modeNotifier,
-              builder: (context, mode, _) {
-                return IconButton(
-                  onPressed: () => ThemeService.instance.toggle(),
-                  icon: Icon(
-                    mode == ThemeMode.dark ? Icons.nights_stay : Icons.wb_sunny,
-                  ),
-                  tooltip: 'Thema',
-                );
-              },
-            ),
-          ),
-        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
