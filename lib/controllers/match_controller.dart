@@ -199,21 +199,28 @@ class MatchController {
           goals.removeLast();
         }
         homeScore = (homeScore > 0) ? homeScore - 1 : 0;
+        break;
       case PlayerEventType.goalAgainst:
         if (goals.isNotEmpty) {
           goals.removeLast();
         }
         awayScore = (awayScore > 0) ? awayScore - 1 : 0;
+        break;
       case PlayerEventType.reboundWon:
         _decrement(_reboundWonByPlayer, last.playerNumber);
+        break;
       case PlayerEventType.reboundLost:
         _decrement(_reboundLostByPlayer, last.playerNumber);
+        break;
       case PlayerEventType.shotMissed:
         _decrement(_shotMissedByPlayer, last.playerNumber);
+        break;
       case PlayerEventType.assist:
         _decrement(_assistByPlayer, last.playerNumber);
+        break;
       case PlayerEventType.interception:
         _decrement(_interceptionByPlayer, last.playerNumber);
+        break;
     }
     onTick?.call();
   }

@@ -127,10 +127,13 @@ class _HomePageState extends State<HomePage> {
     switch (selection) {
       case _ShotSelection.goalFor:
         await _pickTypeAndAddHomeGoal(playerNumber);
+        break;
       case _ShotSelection.goalAgainst:
         await _pickTypeAndAddConcededGoal(playerNumber);
+        break;
       case _ShotSelection.missed:
         await _pickTypeAndAddMissedShot(playerNumber);
+        break;
     }
   }
 
