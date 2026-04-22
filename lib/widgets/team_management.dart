@@ -20,7 +20,7 @@ Future<void> showManageTeamsDialog(BuildContext context) async {
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: teams.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (ctx3, index) {
                       final t = teams[index];
                       return ListTile(
