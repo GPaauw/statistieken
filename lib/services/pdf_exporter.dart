@@ -35,8 +35,6 @@ class PdfExporter {
   static final _muted = p.PdfColors.grey600;
   static final _panel = p.PdfColors.grey100;
   static final _line = p.PdfColors.grey300;
-  static final _zoneOuter = const p.PdfColor.fromInt(0xff09ba51);
-  static final _zoneMiddle = const p.PdfColor.fromInt(0xff98d548);
 
   static Future<Uint8List> buildReport({
     required MatchController c,

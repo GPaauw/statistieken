@@ -98,32 +98,24 @@ class _HomePageState extends State<HomePage> {
   Future<void> _pickTypeAndAddHomeGoal(int playerNumber) async {
     final type = await showGoalTypePicker(context, title: 'Type doelpunt voor');
     if (type == null) return;
-
     _controller.addHomeGoal(playerNumber, type);
   }
 
   Future<void> _pickTypeAndAddConcededGoal(int playerNumber) async {
-    final type = await showGoalTypePicker(
-      context,
-      title: 'Type doelpunt tegen',
-    );
+    final type = await showGoalTypePicker(context, title: 'Type doelpunt tegen');
     if (type == null) return;
-
     _controller.addConcededGoal(playerNumber, type);
   }
 
   Future<void> _pickTypeAndAddMissedShot(int playerNumber) async {
     final type = await showGoalTypePicker(context, title: 'Type schot gemist');
     if (type == null) return;
-
     _controller.addMissedShot(playerNumber, type);
   }
 
   Future<void> _pickShotAction(int playerNumber) async {
     final selection = await _showShotPicker();
-
     if (selection == null) return;
-
     switch (selection) {
       case _ShotSelection.goalFor:
         await _pickTypeAndAddHomeGoal(playerNumber);
@@ -145,9 +137,7 @@ class _HomePageState extends State<HomePage> {
       primaryColor: Colors.green.shade700,
       secondaryColor: Colors.red.shade600,
     );
-
     if (selection == null) return;
-
     if (selection == _TwoOptionSelection.primary) {
       _controller.addReboundWon(playerNumber);
     } else {
@@ -185,9 +175,7 @@ class _HomePageState extends State<HomePage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () {
-                    Navigator.pop(sheetContext, _TwoOptionSelection.primary);
-                  },
+                  onPressed: () => Navigator.pop(sheetContext, _TwoOptionSelection.primary),
                   child: Text(primaryLabel),
                 ),
                 const SizedBox(height: 12),
@@ -197,9 +185,7 @@ class _HomePageState extends State<HomePage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () {
-                    Navigator.pop(sheetContext, _TwoOptionSelection.secondary);
-                  },
+                  onPressed: () => Navigator.pop(sheetContext, _TwoOptionSelection.secondary),
                   child: Text(secondaryLabel),
                 ),
               ],
@@ -234,9 +220,7 @@ class _HomePageState extends State<HomePage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () {
-                    Navigator.pop(sheetContext, _ShotSelection.goalFor);
-                  },
+                  onPressed: () => Navigator.pop(sheetContext, _ShotSelection.goalFor),
                   child: const Text('Doelpunt voor'),
                 ),
                 const SizedBox(height: 12),
@@ -246,9 +230,7 @@ class _HomePageState extends State<HomePage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () {
-                    Navigator.pop(sheetContext, _ShotSelection.goalAgainst);
-                  },
+                  onPressed: () => Navigator.pop(sheetContext, _ShotSelection.goalAgainst),
                   child: const Text('Doelpunt tegen'),
                 ),
                 const SizedBox(height: 12),
@@ -258,9 +240,7 @@ class _HomePageState extends State<HomePage> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  onPressed: () {
-                    Navigator.pop(sheetContext, _ShotSelection.missed);
-                  },
+                  onPressed: () => Navigator.pop(sheetContext, _ShotSelection.missed),
                   child: const Text('Schot gemist'),
                 ),
               ],
@@ -278,8 +258,7 @@ class _HomePageState extends State<HomePage> {
       onShotPick: _pickShotAction,
       onReboundPick: _pickReboundAction,
       onAssistPick: (playerNumber) => _controller.addAssist(playerNumber),
-      onInterceptionPick: (playerNumber) =>
-          _controller.addInterception(playerNumber),
+      onInterceptionPick: (playerNumber) => _controller.addInterception(playerNumber),
       onEditPlayers: (players) => _controller.updateHomePlayers(players),
     );
 
@@ -315,84 +294,80 @@ class _HomePageState extends State<HomePage> {
             height: kToolbarHeight,
             child: Stack(
               children: [
-                // Absolutely centered title so it's visually centered on all widths
                 Center(
                   child: Text(
                     'Statistieken',
-                    style: Theme.of(context).appBarTheme.titleTextStyle ?? Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).appBarTheme.titleTextStyle ??
+                        Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
                 Row(
                   children: [
                     const SizedBox(width: 8),
-                    // Leading: popup menu with team name (constrained so it doesn't push center)
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 260),
                       child: Padding(
                         padding: const EdgeInsets.only(left: 0),
                         child: PopupMenuButton<String>(
-                    tooltip: 'Thuissel',
-                    onSelected: (value) async {
-                      if (value.startsWith('select:')) {
-                        final id = value.substring('select:'.length);
-                        await TeamNames.selectHomeTeam(id);
-                        // load selected team's players into the match controller
-                        final selected = TeamNames.selectedHomeTeam;
-                        if (selected != null) {
-                          _controller.updateHomePlayers(selected.players);
-                        }
-                        _safeSetState();
-                      } else if (value == 'new') {
-                        final created = await showTeamEditor(context);
-                        if (created != null) {
-                          await TeamNames.addTeam(created);
-                          await TeamNames.selectHomeTeam(created.id);
-                          _controller.updateHomePlayers(created.players);
-                          _safeSetState();
-                        }
-                      } else if (value == 'manage') {
-                        await showManageTeamsDialog(context);
-                        final selected = TeamNames.selectedHomeTeam;
-                        if (selected != null) {
-                          _controller.updateHomePlayers(selected.players);
-                        }
-                        _safeSetState();
-                      }
-                    },
-                    itemBuilder: (ctx) {
-                      final items = <PopupMenuEntry<String>>[];
-                      for (final t in TeamNames.teams) {
-                        items.add(PopupMenuItem(
-                          value: 'select:${t.id}',
+                          tooltip: 'Thuissel',
+                          onSelected: (value) async {
+                            if (value.startsWith('select:')) {
+                              final id = value.substring('select:'.length);
+                              await TeamNames.selectHomeTeam(id);
+                              final selected = TeamNames.selectedHomeTeam;
+                              if (selected != null) {
+                                _controller.updateHomePlayers(selected.players);
+                              }
+                              _safeSetState();
+                            } else if (value == 'new') {
+                              final created = await showTeamEditor(context);
+                              if (created != null) {
+                                await TeamNames.addTeam(created);
+                                await TeamNames.selectHomeTeam(created.id);
+                                _controller.updateHomePlayers(created.players);
+                                _safeSetState();
+                              }
+                            } else if (value == 'manage') {
+                              await showManageTeamsDialog(context);
+                              final selected = TeamNames.selectedHomeTeam;
+                              if (selected != null) {
+                                _controller.updateHomePlayers(selected.players);
+                              }
+                              _safeSetState();
+                            }
+                          },
+                          itemBuilder: (ctx) {
+                            final items = <PopupMenuEntry<String>>[];
+                            for (final t in TeamNames.teams) {
+                              items.add(PopupMenuItem(
+                                value: 'select:${t.id}',
+                                child: Row(
+                                  children: [
+                                    const CircleAvatar(radius: 14, child: Icon(Icons.checkroom, size: 16)),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(t.name)),
+                                  ],
+                                ),
+                              ));
+                            }
+                            items.add(const PopupMenuDivider());
+                            items.add(const PopupMenuItem(value: 'new', child: Text('Nieuw team...')));
+                            items.add(const PopupMenuItem(value: 'manage', child: Text('Beheer teams...')));
+                            return items;
+                          },
                           child: Row(
                             children: [
-                              CircleAvatar(radius: 14, child: Icon(Icons.checkroom, size: 16)),
+                              const CircleAvatar(
+                                radius: 16,
+                                child: Icon(Icons.checkroom, size: 18),
+                              ),
                               const SizedBox(width: 8),
-                              Expanded(child: Text(t.name)),
+                              Flexible(child: Text(TeamNames.homeTeamName, overflow: TextOverflow.ellipsis)),
                             ],
                           ),
-                        ));
-                      }
-                      items.add(const PopupMenuDivider());
-                      items.add(const PopupMenuItem(value: 'new', child: Text('Nieuw team...')));
-                      items.add(const PopupMenuItem(value: 'manage', child: Text('Beheer teams...')));
-                      return items;
-                    },
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 16,
-                          child: Icon(Icons.checkroom, size: 18),
                         ),
-                        const SizedBox(width: 8),
-                        Flexible(child: Text(TeamNames.homeTeamName, overflow: TextOverflow.ellipsis)),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-              ),
-              
-                    // push actions to the right
                     const Spacer(),
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
@@ -419,7 +394,6 @@ class _HomePageState extends State<HomePage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 1150;
-
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: isWide
@@ -430,7 +404,19 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(width: 16),
                       SizedBox(width: 320, child: overviewPanel),
                       const SizedBox(width: 16),
-                      Expanded(flex: 4, child: timeline),
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          children: [
+                            timeline,
+                            const SizedBox(height: 16),
+                            _PlayerStatsSection(
+                              events: _controller.events,
+                              homePlayers: _controller.homePlayers,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   )
                 : Column(
@@ -440,6 +426,11 @@ class _HomePageState extends State<HomePage> {
                       playersPanel,
                       const SizedBox(height: 16),
                       timeline,
+                      const SizedBox(height: 16),
+                      _PlayerStatsSection(
+                        events: _controller.events,
+                        homePlayers: _controller.homePlayers,
+                      ),
                     ],
                   ),
           );
@@ -448,6 +439,8 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
 
 class _HomePlayersPanel extends StatelessWidget {
   final TeamPlayers players;
@@ -515,13 +508,8 @@ class _HomePlayersPanel extends StatelessWidget {
                     ),
                     TextButton.icon(
                       onPressed: () async {
-                        final updated = await showPlayerNameEditor(
-                          context,
-                          players,
-                        );
-                        if (updated != null) {
-                          onEditPlayers(updated);
-                        }
+                        final updated = await showPlayerNameEditor(context, players);
+                        if (updated != null) onEditPlayers(updated);
                       },
                       icon: const Icon(Icons.edit, size: 16),
                       label: const Text('Bewerk namen'),
@@ -545,6 +533,8 @@ class _HomePlayersPanel extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
 
 class _MatchOverviewPanel extends StatelessWidget {
   final int homeScore;
@@ -600,10 +590,7 @@ class _MatchOverviewPanel extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '-',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
+                      child: Text('-', style: Theme.of(context).textTheme.headlineMedium),
                     ),
                     Expanded(
                       child: _ScoreValue(
@@ -671,6 +658,8 @@ class _MatchOverviewPanel extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+
 class _ScoreValue extends StatelessWidget {
   final String label;
   final int score;
@@ -698,11 +687,7 @@ class _ScoreValue extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 softWrap: false,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                ),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: color),
               ),
             ),
             if (onEdit != null) ...[
@@ -730,6 +715,8 @@ class _ScoreValue extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
 
 class _GoalTimeline extends StatelessWidget {
   final List<PlayerEvent> events;
@@ -772,7 +759,6 @@ class _GoalTimeline extends StatelessWidget {
                   final event = events[index];
                   final playerName = homePlayers.getName(event.playerNumber);
                   final eventDisplay = _eventDisplay(event, playerName);
-
                   return ListTile(
                     leading: Icon(eventDisplay.icon, color: eventDisplay.color),
                     title: Text(eventDisplay.title),
@@ -841,6 +827,218 @@ class _GoalTimeline extends StatelessWidget {
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+
+class _PlayerStatsSection extends StatelessWidget {
+  final List<PlayerEvent> events;
+  final TeamPlayers homePlayers;
+
+  const _PlayerStatsSection({required this.events, required this.homePlayers});
+
+  @override
+  Widget build(BuildContext context) {
+    final players = List<Player>.from(homePlayers.players);
+    players.sort((a, b) => a.number.compareTo(b.number));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Text(
+            'Speler Statistieken',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Center(
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: players.map((player) {
+              final playerEvents =
+                  events.where((e) => e.playerNumber == player.number).toList();
+              return SizedBox(
+                width: 300,
+                child: _PlayerStatsCard(
+                  name: player.name,
+                  playerNumber: player.number,
+                  events: playerEvents,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _PlayerStatsCard extends StatelessWidget {
+  final String name;
+  final int playerNumber;
+  final List<PlayerEvent> events;
+
+  const _PlayerStatsCard({
+    required this.name,
+    required this.playerNumber,
+    required this.events,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final goalsFor =
+        events.where((e) => e.type == PlayerEventType.goalFor).length;
+    final goalsAgainst =
+        events.where((e) => e.type == PlayerEventType.goalAgainst).length;
+    final missed =
+        events.where((e) => e.type == PlayerEventType.shotMissed).length;
+    final rebsWon =
+        events.where((e) => e.type == PlayerEventType.reboundWon).length;
+    final rebsLost =
+        events.where((e) => e.type == PlayerEventType.reboundLost).length;
+    final assists =
+        events.where((e) => e.type == PlayerEventType.assist).length;
+    final interceptions =
+        events.where((e) => e.type == PlayerEventType.interception).length;
+
+    final totalShots = goalsFor + missed;
+    final accuracy = totalShots > 0 ? (goalsFor / totalShots * 100).round() : 0;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: Colors.blue.shade100,
+                  child: Text(
+                    '$playerNumber',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatItem(label: 'GOALS', value: '$goalsFor', color: Colors.blue.shade700),
+                _StatItem(label: 'TEGEN', value: '$goalsAgainst', color: Colors.red.shade600),
+                _StatItem(label: 'MIS', value: '$missed', color: Colors.orange.shade700),
+                _StatItem(label: 'EFF.', value: '$accuracy%', color: Colors.grey.shade700),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...GoalType.values.map<Widget>((type) {
+              final count = events
+                  .where((e) => e.type == PlayerEventType.goalFor && e.goalType == type)
+                  .length;
+              if (count == 0) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(type.label, style: const TextStyle(fontSize: 11))),
+                    Text('$count', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              );
+            }).toList(),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatIconItem(icon: Icons.sports_basketball, value: '$rebsWon', color: Colors.orange.shade800, tooltip: 'Rebounds +'),
+                _StatIconItem(icon: Icons.sports_basketball_outlined, value: '$rebsLost', color: Colors.red.shade400, tooltip: 'Rebounds -'),
+                _StatIconItem(icon: Icons.handshake_outlined, value: '$assists', color: Colors.teal, tooltip: 'Assists'),
+                _StatIconItem(icon: Icons.front_hand_outlined, value: '$interceptions', color: Colors.green.shade700, tooltip: 'Onderscheppingen'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _StatItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatItem({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+
+class _StatIconItem extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final Color color;
+  final String tooltip;
+
+  const _StatIconItem({
+    required this.icon,
+    required this.value,
+    required this.color,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 
 enum _TwoOptionSelection { primary, secondary }
 

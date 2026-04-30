@@ -12,6 +12,7 @@ Dit bestand wordt door Gemini Code Assist bijgehouden om de voortgang en structu
   - Bijhouden van score via `GoalSide` (home/away).
   - Registreren van acties per speler: Doelpunt, Rebound, Assist, Onderschepping.
   - Gedetailleerde schot-types via `GoalType`: *Klein kansje (2m), Mid range (5m), Afstander (7m), Omdraaibal, Doorloopbal, Vrije bal, Strafworp*.
+  - Live spelerstatistieken op het dashboard onder de tijdlijn.
 - **Spelerbeheer:** Toevoegen en beheren van spelers (bijv. "Speler 1" t/m "Speler 8").
 - **Rapportage:** Exporteren van een "Wedstrijdverslag" naar PDF-formaat met datumstempel.
 - **Databeheer:** Gebruik van `shared_preferences` voor persistentie en `ThemeService` voor UI-instellingen.
@@ -32,3 +33,4 @@ Dit bestand wordt door Gemini Code Assist bijgehouden om de voortgang en structu
 ## 5. Onderhoud Log (Gemini)
 - **2026-04-30:** Initiële project-audit uitgevoerd op basis van bouwbestanden en configuratie. `GEMINI.md` aangemaakt.
 - **2026-04-30:** Bronbestanden (`lib/`) geanalyseerd. Logica voor `GoalType` en thema-beheer vastgelegd in documentatie.
+- **2026-04-30:** Implementatie van live spelerskaarten op het dashboard onder de tijdlijn, gesorteerd op spelersnummer.
