@@ -924,7 +924,11 @@ class _PlayerStatsCard extends StatelessWidget {
                   backgroundColor: Colors.blue.shade100,
                   child: Text(
                     '$playerNumber',
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
