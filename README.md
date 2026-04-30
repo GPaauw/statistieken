@@ -10,6 +10,7 @@ De app stelt coaches en analisten in staat om real-time de prestaties van een te
   - Bijhouden van de score voor zowel het thuis- als uitteam.
   - Registreren van specifieke acties per speler: **Doelpunten**, **Rebounds**, **Assists** en **Onderscheppingen**.
   - Gedetailleerde categorisering van schoten via `GoalType` (o.a. Klein kansje, Afstander, Strafworp, Doorloopbal).
+  - **Real-time spelerstatistieken:** Bekijk direct de prestaties van individuele spelers op het dashboard, inclusief schot-accuraatheid en rebound-verhoudingen.
 - **Spelerbeheer:** 
   - Beheer een team van maximaal 8 spelers.
   - Eenvoudig spelers toevoegen of namen aanpassen.

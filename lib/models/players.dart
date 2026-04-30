@@ -1,5 +1,15 @@
 // lib/models/players.dart
 
+class Player {
+  final int number;
+  final String name;
+
+  Player({
+    required this.number,
+    required this.name,
+  });
+}
+
 class TeamPlayers {
   final Map<int, String> names;
 
@@ -16,6 +26,10 @@ class TeamPlayers {
       names: {for (int i = 1; i <= 8; i++) i: "Speler $i"},
     );
   }
+
+  List<Player> get players => names.entries
+      .map((e) => Player(number: e.key, name: e.value))
+      .toList();
 
   String getName(int number) => names[number] ?? "Speler $number";
 

@@ -430,7 +430,19 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(width: 16),
                       SizedBox(width: 320, child: overviewPanel),
                       const SizedBox(width: 16),
-                      Expanded(flex: 4, child: timeline),
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          children: [
+                            timeline,
+                            const SizedBox(height: 16),
+                            _PlayerStatsSection(
+                              events: _controller.events,
+                              homePlayers: _controller.homePlayers,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   )
                 : Column(
@@ -440,6 +452,11 @@ class _HomePageState extends State<HomePage> {
                       playersPanel,
                       const SizedBox(height: 16),
                       timeline,
+                      const SizedBox(height: 16),
+                      _PlayerStatsSection(
+                        events: _controller.events,
+                        homePlayers: _controller.homePlayers,
+                      ),
                     ],
                   ),
           );
@@ -839,6 +856,195 @@ class _GoalTimeline extends StatelessWidget {
           color: Colors.green.shade700,
         );
     }
+  }
+}
+
+class _PlayerStatsSection extends StatelessWidget {
+  final List<PlayerEvent> events;
+  final TeamPlayers homePlayers;
+
+  const _PlayerStatsSection({required this.events, required this.homePlayers});
+
+  @override
+  Widget build(BuildContext context) {
+    final players = List<Player>.from(homePlayers.players);
+    players.sort((a, b) => a.number.compareTo(b.number));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Text(
+            'Speler Statistieken',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Center(
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: players.map((player) {
+              final playerEvents =
+                  events.where((e) => e.playerNumber == player.number).toList();
+              return SizedBox(
+                width: 300,
+                child: _PlayerStatsCard(
+                  name: player.name,
+                  playerNumber: player.number,
+                  events: playerEvents,
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlayerStatsCard extends StatelessWidget {
+  final String name;
+  final int playerNumber;
+  final List<PlayerEvent> events;
+
+  const _PlayerStatsCard({
+    required this.name,
+    required this.playerNumber,
+    required this.events,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final goalsFor =
+        events.where((e) => e.type == PlayerEventType.goalFor).length;
+    final goalsAgainst =
+        events.where((e) => e.type == PlayerEventType.goalAgainst).length;
+    final missed =
+        events.where((e) => e.type == PlayerEventType.shotMissed).length;
+    final rebsWon =
+        events.where((e) => e.type == PlayerEventType.reboundWon).length;
+    final rebsLost =
+        events.where((e) => e.type == PlayerEventType.reboundLost).length;
+    final assists =
+        events.where((e) => e.type == PlayerEventType.assist).length;
+    final interceptions =
+        events.where((e) => e.type == PlayerEventType.interception).length;
+
+    final totalShots = goalsFor + missed;
+    final accuracy = totalShots > 0 ? (goalsFor / totalShots * 100).round() : 0;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: Colors.blue.shade100,
+                  child: Text(
+                    '$playerNumber',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatItem(label: 'GOALS', value: '$goalsFor', color: Colors.blue.shade700),
+                _StatItem(label: 'TEGEN', value: '$goalsAgainst', color: Colors.red.shade600),
+                _StatItem(label: 'MIS', value: '$missed', color: Colors.orange.shade700),
+                _StatItem(label: 'EFF.', value: '$accuracy%', color: Colors.grey.shade700),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...GoalType.values.map((type) {
+              final count = events
+                  .where((e) => e.type == PlayerEventType.goalFor && e.goalType == type)
+                  .length;
+              if (count == 0) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(type.label, style: const TextStyle(fontSize: 11))),
+                    Text('$count', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              );
+            }).toList(),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _StatIconItem(icon: Icons.sports_basketball, value: '$rebsWon', color: Colors.orange.shade800, tooltip: 'Rebounds +'),
+                _StatIconItem(icon: Icons.sports_basketball_outlined, value: '$rebsLost', color: Colors.red.shade400, tooltip: 'Rebounds -'),
+                _StatIconItem(icon: Icons.handshake_outlined, value: '$assists', color: Colors.teal, tooltip: 'Assists'),
+                _StatIconItem(icon: Icons.front_hand_outlined, value: '$interceptions', color: Colors.green.shade700, tooltip: 'Onderscheppingen'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatItem({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+}
+
+class _StatIconItem extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final Color color;
+  final String tooltip;
+
+  const _StatIconItem({required this.icon, required this.value, required this.color, required this.tooltip});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
   }
 }
 
