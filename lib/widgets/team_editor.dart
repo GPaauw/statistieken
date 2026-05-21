@@ -12,72 +12,78 @@ Future<Team?> showTeamEditor(BuildContext context, {Team? team}) async {
 
   return showDialog<Team>(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(team == null ? 'Nieuw team' : 'Bewerk team'),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Naam team', border: OutlineInputBorder()),
-                autofocus: true,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        title: Text(team == null ? 'Nieuw team' : 'Bewerk team'),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'Naam team', border: OutlineInputBorder()),
+                  autofocus: true,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Text('Spelers: '),
-                    DropdownButton<int>(
-                      value: playerCount,
-                      items: [for (var i = 8; i <= 16; i++) DropdownMenuItem(value: i, child: Text('$i'))],
-                      onChanged: (v) {
-                        if (v == null) return;
-                        playerCount = v;
-                        players = _resizePlayers(players, playerCount);
-                      },
-                    ),
-                  ],
-                ),
-                TextButton.icon(
-                  onPressed: () async {
-                    final updated = await showPlayerNameEditor(context, players);
-                    if (updated != null) {
-                      players = updated;
-                      playerCount = players.names.length;
-                    }
-                  },
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Bewerk spelers'),
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Spelers: '),
+                      DropdownButton<int>(
+                        value: playerCount,
+                        items: [for (var i = 8; i <= 16; i++) DropdownMenuItem(value: i, child: Text('$i'))],
+                        onChanged: (v) {
+                          if (v == null) return;
+                          setState(() {
+                            playerCount = v;
+                            players = _resizePlayers(players, playerCount);
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final updated = await showPlayerNameEditor(context, players);
+                      if (updated != null) {
+                        setState(() {
+                          players = updated;
+                          playerCount = players.names.length;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Bewerk spelers'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuleer')),
+          ElevatedButton(
+            onPressed: () async {
+              final name = nameCtrl.text.trim();
+              if (name.isEmpty) return;
+              final abbr = _abbrevFromName(name);
+
+              final updated = team == null
+                ? Team.create(name: name, abbreviation: abbr, players: players)
+                : Team(id: team.id, name: name, abbreviation: abbr, players: players);
+
+              Navigator.pop(ctx, updated);
+            },
+            child: const Text('Opslaan'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuleer')),
-        ElevatedButton(
-          onPressed: () async {
-            final name = nameCtrl.text.trim();
-            if (name.isEmpty) return;
-            final abbr = _abbrevFromName(name);
-
-            final updated = team == null
-              ? Team.create(name: name, abbreviation: abbr, players: players)
-              : Team(id: team.id, name: name, abbreviation: abbr, players: players);
-
-            Navigator.pop(ctx, updated);
-          },
-          child: const Text('Opslaan'),
-        ),
-      ],
     ),
   );
 }
