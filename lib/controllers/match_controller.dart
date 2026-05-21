@@ -26,6 +26,10 @@ class MatchController {
   int elapsedSeconds = 0;
   Timer? _timer;
 
+  // Timeouts en wissels
+  int timeoutsUsed = 0;
+  int substitutionsUsed = 0;
+
   // Spelersnamen
   TeamPlayers homePlayers = TeamPlayers.default8();
 
@@ -64,6 +68,8 @@ class MatchController {
     _shotMissedByPlayer.clear();
     _assistByPlayer.clear();
     _interceptionByPlayer.clear();
+    timeoutsUsed = 0;
+    substitutionsUsed = 0;
     onTick?.call();
   }
 
@@ -170,6 +176,59 @@ class MatchController {
     _timer = null;
   }
 
+  // Timeouts en wissels beheren
+  void useTimeout() {
+    timeoutsUsed++;
+    events.add(
+      PlayerEvent(
+        secondStamp: elapsedSeconds,
+        playerNumber: 0,
+        type: PlayerEventType.timeoutAdded,
+      ),
+    );
+    onTick?.call();
+  }
+
+  void unuseTimeout() {
+    if (timeoutsUsed > 0) {
+      // Reduce counter and remove the most recent timeoutAdded event from the timeline
+      timeoutsUsed--;
+      for (var i = events.length - 1; i >= 0; i--) {
+        if (events[i].type == PlayerEventType.timeoutAdded) {
+          events.removeAt(i);
+          break;
+        }
+      }
+      onTick?.call();
+    }
+  }
+
+  void addSubstitution() {
+    substitutionsUsed++;
+    events.add(
+      PlayerEvent(
+        secondStamp: elapsedSeconds,
+        playerNumber: 0,
+        type: PlayerEventType.substitutionAdded,
+      ),
+    );
+    onTick?.call();
+  }
+
+  void removeSubstitution() {
+    if (substitutionsUsed > 0) {
+      // Reduce counter and remove the most recent substitutionAdded event from the timeline
+      substitutionsUsed--;
+      for (var i = events.length - 1; i >= 0; i--) {
+        if (events[i].type == PlayerEventType.substitutionAdded) {
+          events.removeAt(i);
+          break;
+        }
+      }
+      onTick?.call();
+    }
+  }
+
   // Undo support over alle geregistreerde events.
   bool get canUndo => events.isNotEmpty;
 
@@ -220,6 +279,18 @@ class MatchController {
         break;
       case PlayerEventType.interception:
         _decrement(_interceptionByPlayer, last.playerNumber);
+        break;
+      case PlayerEventType.timeoutAdded:
+        timeoutsUsed = (timeoutsUsed > 0) ? timeoutsUsed - 1 : 0;
+        break;
+      case PlayerEventType.timeoutRemoved:
+        timeoutsUsed++;
+        break;
+      case PlayerEventType.substitutionAdded:
+        substitutionsUsed = (substitutionsUsed > 0) ? substitutionsUsed - 1 : 0;
+        break;
+      case PlayerEventType.substitutionRemoved:
+        substitutionsUsed++;
         break;
     }
     onTick?.call();
