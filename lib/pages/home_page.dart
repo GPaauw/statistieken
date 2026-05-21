@@ -274,6 +274,12 @@ class _HomePageState extends State<HomePage> {
       onUndo: _controller.canUndo ? () => _controller.undo() : null,
       onExportPdf: _exportPdf,
       onEditAwayName: _editAwayNameDialog,
+      timeoutsUsed: _controller.timeoutsUsed,
+      onIncreaseTimeout: _controller.useTimeout,
+      onDecreaseTimeout: _controller.unuseTimeout,
+      substitutionsUsed: _controller.substitutionsUsed,
+      onIncreaseSubstitution: _controller.addSubstitution,
+      onDecreaseSubstitution: _controller.removeSubstitution,
     );
 
     final timeline = _GoalTimeline(
@@ -548,6 +554,12 @@ class _MatchOverviewPanel extends StatelessWidget {
   final VoidCallback? onUndo;
   final Future<void> Function() onExportPdf;
   final VoidCallback onEditAwayName;
+  final int timeoutsUsed;
+  final VoidCallback onIncreaseTimeout;
+  final VoidCallback onDecreaseTimeout;
+  final int substitutionsUsed;
+  final VoidCallback onIncreaseSubstitution;
+  final VoidCallback onDecreaseSubstitution;
 
   const _MatchOverviewPanel({
     required this.homeScore,
@@ -561,6 +573,12 @@ class _MatchOverviewPanel extends StatelessWidget {
     required this.onUndo,
     required this.onExportPdf,
     required this.onEditAwayName,
+    required this.timeoutsUsed,
+    required this.onIncreaseTimeout,
+    required this.onDecreaseTimeout,
+    required this.substitutionsUsed,
+    required this.onIncreaseSubstitution,
+    required this.onDecreaseSubstitution,
   });
 
   @override
@@ -615,6 +633,7 @@ class _MatchOverviewPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        const SizedBox(height: 16),
         Card(
           elevation: 2,
           child: Padding(
@@ -648,6 +667,86 @@ class _MatchOverviewPanel extends StatelessWidget {
                   icon: const Icon(Icons.picture_as_pdf),
                   onPressed: () => onExportPdf(),
                   label: const Text('Exporteer PDF'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Card(
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text('Time-outs & Wissels', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Time-outs gebruikt:', style: Theme.of(context).textTheme.bodyMedium),
+                      ),
+                    ),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(36, 36),
+                        padding: const EdgeInsets.all(6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      onPressed: timeoutsUsed > 0 ? onDecreaseTimeout : null,
+                      child: const Icon(Icons.remove, size: 18),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('$timeoutsUsed', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(36, 36),
+                        padding: const EdgeInsets.all(6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      onPressed: onIncreaseTimeout,
+                      child: const Icon(Icons.add, size: 18),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Wissels gebruikt:', style: Theme.of(context).textTheme.bodyMedium),
+                      ),
+                    ),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(36, 36),
+                        padding: const EdgeInsets.all(6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      onPressed: substitutionsUsed > 0 ? onDecreaseSubstitution : null,
+                      child: const Icon(Icons.remove, size: 18),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('$substitutionsUsed', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: 'Wissel',
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(40, 36),
+                          padding: const EdgeInsets.all(6),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        onPressed: onIncreaseSubstitution,
+                        child: const Icon(Icons.swap_horiz, size: 18),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -823,6 +922,34 @@ class _GoalTimeline extends StatelessWidget {
           subtitle: 'Onderschepping',
           icon: Icons.front_hand_outlined,
           color: Colors.green.shade700,
+        );
+      case PlayerEventType.timeoutAdded:
+        return _TimelineEventDisplay(
+          title: 'Time-out gebruikt',
+          subtitle: 'Time-out',
+          icon: Icons.timer,
+          color: Colors.purple.shade700,
+        );
+      case PlayerEventType.timeoutRemoved:
+        return _TimelineEventDisplay(
+          title: 'Time-out teruggedraaid',
+          subtitle: 'Time-out ongedaan',
+          icon: Icons.timer_off,
+          color: Colors.grey.shade700,
+        );
+      case PlayerEventType.substitutionAdded:
+        return _TimelineEventDisplay(
+          title: 'Wissel uitgevoerd',
+          subtitle: 'Wissel',
+          icon: Icons.swap_horiz,
+          color: Colors.indigo.shade700,
+        );
+      case PlayerEventType.substitutionRemoved:
+        return _TimelineEventDisplay(
+          title: 'Wissel teruggedraaid',
+          subtitle: 'Wissel ongedaan',
+          icon: Icons.swap_horizontal_circle_outlined,
+          color: Colors.grey.shade700,
         );
     }
   }

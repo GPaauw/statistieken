@@ -10,6 +10,10 @@ enum PlayerEventType {
   reboundLost,
   assist,
   interception,
+  timeoutAdded,
+  timeoutRemoved,
+  substitutionAdded,
+  substitutionRemoved,
 }
 
 @immutable
