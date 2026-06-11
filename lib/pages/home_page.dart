@@ -145,6 +145,61 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Future<void> _showSubstitutionDialog() async {
+    final players = _controller.homePlayers.players;
+    int? outNumber;
+    int? inNumber;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dContext) {
+        return StatefulBuilder(builder: (ctx, setState) {
+          return AlertDialog(
+            title: const Text('Wissel uitvoeren'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<int>(
+                  decoration: const InputDecoration(labelText: 'Wie gaat eruit?'),
+                  value: outNumber,
+                  items: players
+                      .map((p) => DropdownMenuItem(value: p.number, child: Text('${p.number} - ${p.name}')))
+                      .toList(),
+                  onChanged: (v) => setState(() => outNumber = v),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<int>(
+                  decoration: const InputDecoration(labelText: 'Wie komt erin?'),
+                  value: inNumber,
+                  items: players
+                      .map((p) => DropdownMenuItem(value: p.number, child: Text('${p.number} - ${p.name}')))
+                      .toList(),
+                  onChanged: (v) => setState(() => inNumber = v),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dContext).pop(),
+                child: const Text('Annuleer'),
+              ),
+              ElevatedButton(
+                onPressed: (outNumber != null && inNumber != null && outNumber != inNumber)
+                    ? () {
+                        _controller.addSubstitution(outNumber!, inNumber!);
+                        Navigator.of(dContext).pop();
+                        _safeSetState();
+                      }
+                    : null,
+                child: const Text('Bevestig'),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
   Future<_TwoOptionSelection?> _showTwoOptionPicker({
     required String title,
     required String primaryLabel,
@@ -278,7 +333,7 @@ class _HomePageState extends State<HomePage> {
       onIncreaseTimeout: _controller.useTimeout,
       onDecreaseTimeout: _controller.unuseTimeout,
       substitutionsUsed: _controller.substitutionsUsed,
-      onIncreaseSubstitution: _controller.addSubstitution,
+      onIncreaseSubstitution: _showSubstitutionDialog,
       onDecreaseSubstitution: _controller.removeSubstitution,
     );
 
@@ -856,8 +911,7 @@ class _GoalTimeline extends StatelessWidget {
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final event = events[index];
-                  final playerName = homePlayers.getName(event.playerNumber);
-                  final eventDisplay = _eventDisplay(event, playerName);
+                  final eventDisplay = _eventDisplay(event);
                   return ListTile(
                     leading: Icon(eventDisplay.icon, color: eventDisplay.color),
                     title: Text(eventDisplay.title),
@@ -871,8 +925,11 @@ class _GoalTimeline extends StatelessWidget {
       ),
     );
   }
-
-  _TimelineEventDisplay _eventDisplay(PlayerEvent event, String playerName) {
+  _TimelineEventDisplay _eventDisplay(PlayerEvent event) {
+    final playerName = homePlayers.getName(event.playerNumber);
+    final relatedName = event.relatedPlayerNumber != null
+        ? homePlayers.getName(event.relatedPlayerNumber!)
+        : '';
     switch (event.type) {
       case PlayerEventType.goalFor:
         return _TimelineEventDisplay(
@@ -939,7 +996,9 @@ class _GoalTimeline extends StatelessWidget {
         );
       case PlayerEventType.substitutionAdded:
         return _TimelineEventDisplay(
-          title: 'Wissel uitgevoerd',
+          title: relatedName.isNotEmpty
+              ? '$playerName vervangen door $relatedName'
+              : 'Wissel uitgevoerd',
           subtitle: 'Wissel',
           icon: Icons.swap_horiz,
           color: Colors.indigo.shade700,

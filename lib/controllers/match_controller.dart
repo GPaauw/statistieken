@@ -203,12 +203,13 @@ class MatchController {
     }
   }
 
-  void addSubstitution() {
+  void addSubstitution(int outPlayerNumber, int inPlayerNumber) {
     substitutionsUsed++;
     events.add(
       PlayerEvent(
         secondStamp: elapsedSeconds,
-        playerNumber: 0,
+        playerNumber: outPlayerNumber,
+        relatedPlayerNumber: inPlayerNumber,
         type: PlayerEventType.substitutionAdded,
       ),
     );
