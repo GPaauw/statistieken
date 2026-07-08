@@ -147,6 +147,7 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _showSubstitutionDialog() async {
     final players = _controller.homePlayers.players;
+    // beide dropdowns tonen alle spelers; we voorkomen dubbele selectie verderop
     int? outNumber;
     int? inNumber;
 
@@ -162,19 +163,41 @@ class _HomePageState extends State<HomePage> {
                 DropdownButtonFormField<int>(
                   decoration: const InputDecoration(labelText: 'Wie gaat eruit?'),
                   value: outNumber,
-                  items: players
-                      .map((p) => DropdownMenuItem(value: p.number, child: Text('${p.number} - ${p.name}')))
-                      .toList(),
-                  onChanged: (v) => setState(() => outNumber = v),
+                  items: players.map((p) {
+                    final disabled = inNumber != null && p.number == inNumber;
+                    return DropdownMenuItem<int>(
+                      value: p.number,
+                      child: Text(
+                        '${p.number} - ${p.name}${disabled ? " (al geselecteerd)" : ""}',
+                        style: TextStyle(color: disabled ? Colors.grey : null),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    if (inNumber != null && v == inNumber) return; // voorkom dezelfde speler
+                    setState(() => outNumber = v);
+                  },
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<int>(
                   decoration: const InputDecoration(labelText: 'Wie komt erin?'),
                   value: inNumber,
-                  items: players
-                      .map((p) => DropdownMenuItem(value: p.number, child: Text('${p.number} - ${p.name}')))
-                      .toList(),
-                  onChanged: (v) => setState(() => inNumber = v),
+                  items: players.map((p) {
+                    final disabled = outNumber != null && p.number == outNumber;
+                    return DropdownMenuItem<int>(
+                      value: p.number,
+                      child: Text(
+                        '${p.number} - ${p.name}${disabled ? " (al geselecteerd)" : ""}',
+                        style: TextStyle(color: disabled ? Colors.grey : null),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (v) {
+                    if (v == null) return;
+                    if (outNumber != null && v == outNumber) return; // voorkom dezelfde speler
+                    setState(() => inNumber = v);
+                  },
                 ),
               ],
             ),

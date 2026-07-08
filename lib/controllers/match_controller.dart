@@ -32,11 +32,18 @@ class MatchController {
 
   // Spelersnamen
   TeamPlayers homePlayers = TeamPlayers.default8();
+  // Welke spelers staan momenteel op het veld (spelernummers)
+  final Set<int> _onCourt = {};
 
   // UI callback
   final void Function()? onTick;
 
-  MatchController({this.onTick});
+  MatchController({this.onTick}) {
+    // init onCourt met de eerste spelers uit de lijst (bijv. 5 spelers of minder)
+    final nums = homePlayers.players.map((p) => p.number).toList()..sort();
+    final takeCount = nums.length >= 5 ? 5 : nums.length;
+    _onCourt.addAll(nums.take(takeCount));
+  }
 
   // Timer
   void start() {
@@ -168,6 +175,14 @@ class MatchController {
   // Spelers updaten
   void updateHomePlayers(TeamPlayers players) {
     homePlayers = players;
+    // Zorg dat onCourt consistent blijft met nieuwe spelerslijst.
+    final nums = homePlayers.players.map((p) => p.number).toSet();
+    _onCourt.retainAll(nums);
+    if (_onCourt.isEmpty) {
+      final ordered = nums.toList()..sort();
+      final takeCount = ordered.length >= 5 ? 5 : ordered.length;
+      _onCourt.addAll(ordered.take(takeCount));
+    }
     onTick?.call();
   }
 
@@ -213,8 +228,19 @@ class MatchController {
         type: PlayerEventType.substitutionAdded,
       ),
     );
+    // Werk onCourt bij: haal eruit, voeg erin toe
+    if (_onCourt.contains(outPlayerNumber)) {
+      _onCourt.remove(outPlayerNumber);
+    }
+    _onCourt.add(inPlayerNumber);
     onTick?.call();
   }
+
+  /// Check of een speler momenteel op het veld staat
+  bool isOnCourt(int playerNumber) => _onCourt.contains(playerNumber);
+
+  /// Geef een onveranderlijke lijst van spelernummers die op het veld staan
+  List<int> get onCourtPlayers => List.unmodifiable(_onCourt.toList()..sort());
 
   void removeSubstitution() {
     if (substitutionsUsed > 0) {
