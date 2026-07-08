@@ -21,12 +21,14 @@ class PlayerEvent {
   final int secondStamp;
   final int playerNumber;
   final PlayerEventType type;
+  final int? relatedPlayerNumber;
   final GoalType? goalType;
 
   const PlayerEvent({
     required this.secondStamp,
     required this.playerNumber,
     required this.type,
+    this.relatedPlayerNumber,
     this.goalType,
   });
 
